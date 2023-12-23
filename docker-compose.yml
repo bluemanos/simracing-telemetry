@@ -1,0 +1,25 @@
+version: '3.8'
+
+services:
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    ports:
+      - ${TMD_FORZAM:-9999}:9999/udp
+    volumes:
+      - ./:/app
+    entrypoint: CompileDaemon -build="go build -o simracing-telemetry" -command="./simracing-telemetry"
+
+  db:
+    image: mariadb:10.5.8
+    ports:
+      - ${DB_PORT:-3306}:3306
+    environment:
+      MYSQL_ROOT_PASSWORD: ${DB_ROOT_PASSWORD:-root}
+      MYSQL_DATABASE: ${DB_DATABASE:-app}
+      MYSQL_USER: ${DB_USER:-user}
+      MYSQL_PASSWORD: ${DB_PASSWORD:-pass}
+    volumes:
+        - ./.docker/db/data:/var/lib/mysql
+        - ./.docker/db/init:/docker-entrypoint-initdb.d
