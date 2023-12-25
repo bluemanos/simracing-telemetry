@@ -20,11 +20,10 @@ type ForzaMotorsportHandler struct {
 	DebugMode string
 }
 
-func (fm *ForzaMotorsportHandler) InitAndRun(port int) error {
+func (fm *ForzaMotorsportHandler) InitAndRun(port int, adapters []telemetry.ConverterInterface) error {
 	udpServer := server.UDPServer{
 		Addr: "0.0.0.0:" + strconv.Itoa(port),
 	}
-
 	fm.Telemetries, fm.Keys = fm.initTelemetry()
 
 	log.Printf("Forza data out server listening on %s:%d, waiting for Forza data...\n", telemetry.GetOutboundIP(), port)

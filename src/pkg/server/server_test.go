@@ -21,8 +21,6 @@ func init() {
 }
 
 func TestServer_Running(t *testing.T) {
-	t.Parallel()
-
 	servers := []struct {
 		protocol    string
 		addr        string
@@ -43,17 +41,20 @@ func TestServer_Running(t *testing.T) {
 }
 
 func TestServer_Request(t *testing.T) {
+	t.Parallel()
+
 	tt := []struct {
-		test    string
-		payload []byte
-		want    []byte
+		testName string
+		payload  []byte
+		want     []byte
 	}{
 		{"Sending a simple request returns result", []byte("hello world\n"), []byte("Request received: hello world")},
 		{"Sending another simple request works", []byte("goodbye world\n"), []byte("Request received: goodbye world")},
 	}
 
 	for _, tc := range tt {
-		t.Run(tc.test, func(t *testing.T) {
+		t.Run(tc.testName, func(t *testing.T) {
+			t.Parallel()
 			conn, err := net.DialTimeout("udp", udpPort, time.Second)
 			if err != nil {
 				t.Error("could not connect to server: ", err)

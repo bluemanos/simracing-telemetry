@@ -3,10 +3,15 @@ package telemetry
 import (
 	"fmt"
 	"os"
+	"time"
 )
 
+type ConverterInterface interface {
+	Convert(now time.Time, data map[string]TelemetryData, keys []string)
+}
+
 type TelemetryInterface interface {
-	InitAndRun(port int) error
+	InitAndRun(port int, adapters []ConverterInterface) error
 }
 
 type TelemetryHandler struct {
