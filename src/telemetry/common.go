@@ -11,12 +11,13 @@ type ConverterInterface interface {
 }
 
 type TelemetryInterface interface {
-	InitAndRun(port int, adapters []ConverterInterface) error
+	InitAndRun(port int) error
 }
 
 type TelemetryHandler struct {
 	Telemetries map[string]TelemetryData
 	Keys        []string
+	Adapters    []ConverterInterface
 }
 
 type TelemetryData struct {

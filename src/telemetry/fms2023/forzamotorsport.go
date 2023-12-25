@@ -3,10 +3,13 @@ package fms2023
 import (
 	"encoding/binary"
 	"fmt"
+	"github.com/bluemanos/simracing-telemetry/src/pkg/converter"
+	"github.com/bluemanos/simracing-telemetry/src/pkg/enums"
 	"log"
 	"math"
 	"strconv"
 	"strings"
+	"time"
 
 	"github.com/bluemanos/simracing-telemetry/src/pkg/server"
 	"github.com/bluemanos/simracing-telemetry/src/telemetry"
@@ -20,7 +23,16 @@ type ForzaMotorsportHandler struct {
 	DebugMode string
 }
 
-func (fm *ForzaMotorsportHandler) InitAndRun(port int, adapters []telemetry.ConverterInterface) error {
+func NewForzaMotorsportHandler(debugMode string) *ForzaMotorsportHandler {
+	return &ForzaMotorsportHandler{
+		TelemetryHandler: telemetry.TelemetryHandler{
+			Adapters: converter.SetupAdapter(enums.Games.ForzaMotorsport2023()),
+		},
+		DebugMode: debugMode,
+	}
+}
+
+func (fm *ForzaMotorsportHandler) InitAndRun(port int) error {
 	udpServer := server.UDPServer{
 		Addr: "0.0.0.0:" + strconv.Itoa(port),
 	}
@@ -108,6 +120,10 @@ func (fm *ForzaMotorsportHandler) processBuffer(buffer []byte) {
 		fm.Telemetries["Speed"].Data*3.6, // 3.6 for kph, 2.237 for mph
 		fm.Telemetries["TireCombinedSlipRearLeft"].Data+fm.Telemetries["TireCombinedSlipRearRight"].Data,
 	))
+
+	for _, adapter := range fm.Adapters {
+		go adapter.Convert(time.Now(), fm.Telemetries, fm.Keys)
+	}
 
 	//db, err := sql.Open("mysql", "root:root@tcp(127.0.0.1:3306)/app")
 	//if err != nil {
