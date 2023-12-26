@@ -2,7 +2,6 @@ package converter
 
 import (
 	"github.com/bluemanos/simracing-telemetry/src/pkg/enums"
-	"github.com/bluemanos/simracing-telemetry/src/telemetry"
 	"github.com/spf13/afero"
 	"github.com/stretchr/testify/assert"
 	"testing"
@@ -29,8 +28,8 @@ func TestCsvFilename(t *testing.T) {
 			converterSetup: CsvConverter{
 				ConverterData: ConverterData{
 					GameName: enums.Games.ForzaMotorsport2023(),
-					Fs:       fs,
 				},
+				Fs:        fs,
 				FilePath:  "/var/log/simracing-telemetry/",
 				Retention: enums.RetentionTypes.Daily(),
 			},
@@ -42,8 +41,8 @@ func TestCsvFilename(t *testing.T) {
 			converterSetup: CsvConverter{
 				ConverterData: ConverterData{
 					GameName: enums.Games.ForzaMotorsport2023(),
-					Fs:       fs,
 				},
+				Fs:        fs,
 				FilePath:  "/var/log/simracing-telemetry",
 				Retention: enums.RetentionTypes.Daily(),
 			},
@@ -55,8 +54,8 @@ func TestCsvFilename(t *testing.T) {
 			converterSetup: CsvConverter{
 				ConverterData: ConverterData{
 					GameName: enums.Games.ForzaMotorsport2023(),
-					Fs:       fs,
 				},
+				Fs:        fs,
 				FilePath:  "/var/log/simracing-telemetry/test.txt",
 				Retention: enums.RetentionTypes.Daily(),
 			},
@@ -69,8 +68,8 @@ func TestCsvFilename(t *testing.T) {
 			converterSetup: CsvConverter{
 				ConverterData: ConverterData{
 					GameName: enums.Games.ForzaMotorsport2023(),
-					Fs:       fs,
 				},
+				Fs:        fs,
 				FilePath:  "/var/log/simracing-telemetry123",
 				Retention: enums.RetentionTypes.Daily(),
 			},
@@ -83,8 +82,8 @@ func TestCsvFilename(t *testing.T) {
 			converterSetup: CsvConverter{
 				ConverterData: ConverterData{
 					GameName: enums.Games.ForzaMotorsport2023(),
-					Fs:       fs,
 				},
+				Fs:        fs,
 				FilePath:  "var/log/not-exists/simracing-telemetry",
 				Retention: enums.RetentionTypes.Daily(),
 			},
@@ -97,8 +96,8 @@ func TestCsvFilename(t *testing.T) {
 			converterSetup: CsvConverter{
 				ConverterData: ConverterData{
 					GameName: enums.Games.ForzaMotorsport2023(),
-					Fs:       fs,
 				},
+				Fs:        fs,
 				FilePath:  "relative/path/simracing-telemetry/",
 				Retention: enums.RetentionTypes.Daily(),
 			},
@@ -110,8 +109,8 @@ func TestCsvFilename(t *testing.T) {
 			converterSetup: CsvConverter{
 				ConverterData: ConverterData{
 					GameName: enums.Games.ForzaMotorsport2023(),
-					Fs:       fs,
 				},
+				Fs:        fs,
 				FilePath:  "/var/log/simracing-telemetry/",
 				Retention: enums.RetentionTypes.None(),
 			},
@@ -123,8 +122,8 @@ func TestCsvFilename(t *testing.T) {
 			converterSetup: CsvConverter{
 				ConverterData: ConverterData{
 					GameName: enums.Games.ForzaMotorsport2023(),
-					Fs:       fs,
 				},
+				Fs:        fs,
 				FilePath:  "/var/log/simracing-telemetry",
 				Retention: enums.RetentionTypes.None(),
 			},
@@ -136,8 +135,8 @@ func TestCsvFilename(t *testing.T) {
 			converterSetup: CsvConverter{
 				ConverterData: ConverterData{
 					GameName: enums.Games.ForzaMotorsport2023(),
-					Fs:       fs,
 				},
+				Fs:        fs,
 				FilePath:  "var/log/not-exists/simracing-telemetry",
 				Retention: enums.RetentionTypes.None(),
 			},
@@ -150,8 +149,8 @@ func TestCsvFilename(t *testing.T) {
 			converterSetup: CsvConverter{
 				ConverterData: ConverterData{
 					GameName: enums.Games.ForzaMotorsport2023(),
-					Fs:       fs,
 				},
+				Fs:        fs,
 				FilePath:  "/var/log/simracing-telemetry/newfile.csv",
 				Retention: enums.RetentionTypes.None(),
 			},
@@ -179,19 +178,15 @@ func TestCsvConvert(t *testing.T) {
 	converter := CsvConverter{
 		ConverterData: ConverterData{
 			GameName: enums.Games.ForzaMotorsport2023(),
-			Fs:       fs,
 		},
+		Fs:        fs,
 		FilePath:  "/var/www/simracing-telemetry/test.csv",
 		Retention: enums.RetentionTypes.None(),
 	}
 
-	converter.Convert(now, map[string]telemetry.TelemetryData{
-		"test": {
-			Data: 1,
-		},
-		"test2": {
-			Data: 123.45,
-		},
+	converter.Convert(now, map[string]float32{
+		"test":  1,
+		"test2": 123.45,
 	}, []string{"test", "test2"})
 
 	fileExists, _ := afero.Exists(fs, "/var/www/simracing-telemetry/test.csv")

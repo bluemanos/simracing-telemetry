@@ -7,8 +7,7 @@ type Server interface {
 	Close() error
 }
 
-// NewServer creates a new Server using given protocol
-// and addr.
+// NewServer creates a new Server
 func NewServer(addr string) Server {
 	return &UDPServer{
 		Addr: addr,

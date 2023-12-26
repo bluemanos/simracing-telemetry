@@ -9,33 +9,34 @@ import (
 	"time"
 
 	"github.com/bluemanos/simracing-telemetry/src/pkg/enums"
-	"github.com/bluemanos/simracing-telemetry/src/telemetry"
 	"github.com/spf13/afero"
 )
 
 var (
-	errInvalidFilePath  = errors.New("invalid file path")
-	errInvalidRetention = errors.New("invalid retention type")
+	errInvalidFilePath  = errors.New("[CSV] invalid file path")
+	errInvalidRetention = errors.New("[CSV] invalid retention type")
 )
 
 type CsvConverter struct {
 	ConverterData
+	Fs          afero.Fs
 	FilePath    string
 	Retention   enums.RetentionType
 	fileHandler afero.File
 }
 
-func (csv CsvConverter) Convert(now time.Time, data map[string]telemetry.TelemetryData, keys []string) {
+// Convert the data to CSV format and writes it to the file
+func (csv CsvConverter) Convert(now time.Time, data map[string]float32, keys []string) {
 	afs := &afero.Afero{Fs: csv.Fs}
 	filePath, err := csv.correctFilePath(now)
 	if err != nil {
-		log.Println(err)
+		log.Fatalln(err)
 		return
 	}
 
 	fileExists, err := afs.Exists(filePath)
 	if err != nil {
-		log.Println(err)
+		log.Fatalln(err)
 		return
 	}
 	if !fileExists {
@@ -46,7 +47,7 @@ func (csv CsvConverter) Convert(now time.Time, data map[string]telemetry.Telemet
 		csvHeader = csvHeader + "\n"
 		err = afs.WriteFile(filePath, []byte(csvHeader)[1:], 0644)
 		if err != nil {
-			log.Println(err)
+			log.Fatalln(err)
 			return
 		}
 	}
@@ -54,7 +55,7 @@ func (csv CsvConverter) Convert(now time.Time, data map[string]telemetry.Telemet
 	if csv.fileHandler == nil || csv.fileHandler.Name() != filePath {
 		csv.fileHandler, err = afs.OpenFile(filePath, os.O_WRONLY|os.O_APPEND, 0644)
 		if err != nil {
-			log.Println(err)
+			log.Fatalln(err)
 			return
 		}
 		defer csv.fileHandler.Close()
@@ -62,12 +63,13 @@ func (csv CsvConverter) Convert(now time.Time, data map[string]telemetry.Telemet
 
 	csvLine := ""
 	for _, key := range keys {
-		csvLine += fmt.Sprintf(",%v", data[key].Data)
+		csvLine += fmt.Sprintf(",%v", data[key])
 	}
 	csvLine += "\n"
 	fmt.Fprintf(csv.fileHandler, csvLine[1:])
 }
 
+// correctFilePath returns the correct file path based on the retention type
 func (csv CsvConverter) correctFilePath(now time.Time) (string, error) {
 	afs := &afero.Afero{Fs: csv.Fs}
 
@@ -81,6 +83,7 @@ func (csv CsvConverter) correctFilePath(now time.Time) (string, error) {
 	return "", errInvalidRetention
 }
 
+// dailyRetention validate and returns the file path for daily retention
 func (csv CsvConverter) dailyRetention(now time.Time, afs *afero.Afero) (string, error) {
 	isDir, err := afs.IsDir(csv.FilePath)
 	if err != nil || !isDir {
@@ -97,6 +100,7 @@ func (csv CsvConverter) dailyRetention(now time.Time, afs *afero.Afero) (string,
 	return csv.FilePath + defaultFileName, nil
 }
 
+// noRetention validate and returns the file path for no retention type
 func (csv CsvConverter) noRetention(_ time.Time, afs *afero.Afero) (string, error) {
 	defaultFileName := fmt.Sprintf("%s.csv", csv.GameName)
 

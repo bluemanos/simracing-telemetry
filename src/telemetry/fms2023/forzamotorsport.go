@@ -5,15 +5,13 @@ import (
 	"fmt"
 	"github.com/bluemanos/simracing-telemetry/src/pkg/converter"
 	"github.com/bluemanos/simracing-telemetry/src/pkg/enums"
+	"github.com/bluemanos/simracing-telemetry/src/pkg/server"
+	"github.com/bluemanos/simracing-telemetry/src/telemetry"
 	"log"
 	"math"
 	"strconv"
 	"strings"
 	"time"
-
-	"github.com/bluemanos/simracing-telemetry/src/pkg/server"
-	"github.com/bluemanos/simracing-telemetry/src/telemetry"
-	_ "github.com/go-sql-driver/mysql"
 )
 
 const dataFormatFile = "forzamotorsport"
@@ -23,6 +21,7 @@ type ForzaMotorsportHandler struct {
 	DebugMode string
 }
 
+// NewForzaMotorsportHandler creates a new ForzaMotorsportHandler
 func NewForzaMotorsportHandler(debugMode string) *ForzaMotorsportHandler {
 	return &ForzaMotorsportHandler{
 		TelemetryHandler: telemetry.TelemetryHandler{
@@ -32,6 +31,7 @@ func NewForzaMotorsportHandler(debugMode string) *ForzaMotorsportHandler {
 	}
 }
 
+// InitAndRun starts the ForzaMotorsportHandler
 func (fm *ForzaMotorsportHandler) InitAndRun(port int) error {
 	udpServer := server.UDPServer{
 		Addr: "0.0.0.0:" + strconv.Itoa(port),
@@ -47,6 +47,7 @@ func (fm *ForzaMotorsportHandler) InitAndRun(port int) error {
 	return nil
 }
 
+// initTelemetry initializes the telemetry data
 func (fm *ForzaMotorsportHandler) initTelemetry() (map[string]telemetry.TelemetryData, []string) {
 	lines, err := telemetry.ReadLines("fms2023/" + dataFormatFile)
 	if err != nil {
@@ -91,50 +92,40 @@ func (fm *ForzaMotorsportHandler) initTelemetry() (map[string]telemetry.Telemetr
 	return telemetryArray, telemetryKeys
 }
 
+// processBuffer processes the received data
 func (fm *ForzaMotorsportHandler) processBuffer(buffer []byte) {
+	tempTelemetry := make(map[string]float32, len(fm.Telemetries))
+
 	for i, telemetryObj := range fm.Telemetries {
 		data := buffer[telemetryObj.StartOffset:telemetryObj.EndOffset]
 
+		var value float32
 		switch telemetryObj.DataType {
 		case "F32":
-			telemetryObj.Data = math.Float32frombits(binary.LittleEndian.Uint32(data))
+			value = math.Float32frombits(binary.LittleEndian.Uint32(data))
 		case "U8":
-			telemetryObj.Data = float32(data[0])
+			value = float32(data[0])
 		case "S8":
-			telemetryObj.Data = float32(int8(data[0]))
+			value = float32(int8(data[0]))
 		case "U16":
-			telemetryObj.Data = float32(binary.LittleEndian.Uint16(data))
+			value = float32(binary.LittleEndian.Uint16(data))
 		default:
-			telemetryObj.Data = float32(binary.LittleEndian.Uint32(data))
+			value = float32(binary.LittleEndian.Uint32(data))
 		}
 
-		fm.Telemetries[i] = telemetryObj
+		tempTelemetry[i] = value
 	}
 
 	telemetry.DisplayLog("vvv", fmt.Sprintf(
-		"IsRace: %.0f \t RPM: %.0f \t Gear: %.0f \t BHP: %.0f \t Speed: %.0f \t Total slip: %.0f",
-		fm.Telemetries["IsRaceOn"].Data,
-		fm.Telemetries["CurrentEngineRpm"].Data,
-		fm.Telemetries["Gear"].Data,
-		math.Max(0.0, float64(fm.Telemetries["Power"].Data/745.699872)),
-		fm.Telemetries["Speed"].Data*3.6, // 3.6 for kph, 2.237 for mph
-		fm.Telemetries["TireCombinedSlipRearLeft"].Data+fm.Telemetries["TireCombinedSlipRearRight"].Data,
+		"IsRace: %.0f \t RPM: %.0f \t Gear: %.0f \t BHP: %.0f \t Speed: %.0f",
+		tempTelemetry["IsRaceOn"],
+		tempTelemetry["CurrentEngineRpm"],
+		tempTelemetry["Gear"],
+		math.Max(0.0, float64(tempTelemetry["Power"]/745.699872)),
+		tempTelemetry["Speed"]*3.6, // 3.6 for kph, 2.237 for mph
 	))
 
 	for _, adapter := range fm.Adapters {
-		go adapter.Convert(time.Now(), fm.Telemetries, fm.Keys)
+		go adapter.Convert(time.Now(), tempTelemetry, fm.Keys)
 	}
-
-	//db, err := sql.Open("mysql", "root:root@tcp(127.0.0.1:3306)/app")
-	//if err != nil {
-	//	panic(err.Error())
-	//}
-	//defer db.Close()
-	//
-	//query := fmt.Sprintf("INSERT INTO tmd_forzamotorsport2023 (IsRaceOn, TimestampMS, EngineMaxRpm, EngineIdleRpm, CurrentEngineRpm) VALUES(%.4f, %.4f, %.4f, %.4f, %.4f)", fm.telemetries["IsRaceOn"].data, fm.telemetries["TimestampMS"].data, fm.telemetries["EngineMaxRpm"].data, fm.telemetries["EngineIdleRpm"].data, fm.telemetries["CurrentEngineRpm"].data)
-	//insert, err := db.Query(query)
-	//if err != nil {
-	//	panic(err.Error())
-	//}
-	//defer insert.Close()
 }

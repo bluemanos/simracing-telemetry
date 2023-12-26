@@ -7,7 +7,7 @@ import (
 )
 
 type ConverterInterface interface {
-	Convert(now time.Time, data map[string]TelemetryData, keys []string)
+	Convert(now time.Time, data map[string]float32, keys []string)
 }
 
 type TelemetryInterface interface {
@@ -24,8 +24,6 @@ type TelemetryData struct {
 	Position    int
 	Name        string
 	DataType    string
-	dataRaw     []byte
-	Data        float32
 	StartOffset int
 	EndOffset   int
 }
