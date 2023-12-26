@@ -17,7 +17,7 @@ type MySqlConverter struct {
 }
 
 // Convert converts the data to the MySQL database
-func (db MySqlConverter) Convert(now time.Time, data map[string]float32, keys []string) {
+func (db MySqlConverter) Convert(_ time.Time, data map[string]float32, keys []string) {
 	if db.connector == nil {
 		fmt.Println("Reconnecting to MySQL...")
 		var err error

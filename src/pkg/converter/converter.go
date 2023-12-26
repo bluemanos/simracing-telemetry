@@ -2,6 +2,7 @@ package converter
 
 import (
 	"database/sql"
+	"flag"
 	"fmt"
 	"github.com/spf13/afero"
 	"log"
@@ -63,10 +64,14 @@ func SetupAdapter(game enums.Game) []telemetry.ConverterInterface {
 				continue
 			}
 
-			db, err := sql.Open("mysql", fmt.Sprintf("%s:%s@tcp(%s:%s)/%s", adapterConfiguration[1], adapterConfiguration[2], adapterConfiguration[3], adapterConfiguration[4], adapterConfiguration[5]))
-			if err != nil {
-				log.Println(err)
-				continue
+			var db *sql.DB
+			if flag.Lookup("test.v") == nil {
+				var err error
+				db, err = sql.Open("mysql", fmt.Sprintf("%s:%s@tcp(%s:%s)/%s", adapterConfiguration[1], adapterConfiguration[2], adapterConfiguration[3], adapterConfiguration[4], adapterConfiguration[5]))
+				if err != nil {
+					log.Println(err)
+					continue
+				}
 			}
 
 			converters = append(converters, MySqlConverter{
