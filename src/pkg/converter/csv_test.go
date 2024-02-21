@@ -2,6 +2,7 @@ package converter
 
 import (
 	"github.com/bluemanos/simracing-telemetry/src/pkg/enums"
+	"github.com/bluemanos/simracing-telemetry/src/telemetry"
 	"github.com/spf13/afero"
 	"github.com/stretchr/testify/assert"
 	"testing"
@@ -184,10 +185,14 @@ func TestCsvConvert(t *testing.T) {
 		Retention: enums.RetentionTypes.None(),
 	}
 
-	converter.Convert(now, map[string]float32{
-		"test":  1,
-		"test2": 123.45,
-	}, []string{"test", "test2"})
+	converter.Convert(now, telemetry.GameData{
+		Keys: []string{"test", "test2"},
+		Data: map[string]float32{
+			"test":  1,
+			"test2": 123.45,
+		},
+		RawData: []byte("test,test2\n1,123.45\n"),
+	})
 
 	fileExists, _ := afero.Exists(fs, "/var/www/simracing-telemetry/test.csv")
 	assert.True(t, fileExists)

@@ -6,8 +6,14 @@ import (
 	"time"
 )
 
+type GameData struct {
+	Keys    []string
+	Data    map[string]float32
+	RawData []byte
+}
+
 type ConverterInterface interface {
-	Convert(now time.Time, data map[string]float32, keys []string)
+	Convert(now time.Time, data GameData)
 }
 
 type TelemetryInterface interface {

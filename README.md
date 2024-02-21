@@ -12,7 +12,7 @@ Record and display telemetry from:
 
 Fully configured. Written in Golang.
 
-Plans to support: AC, ACC, F1 2023, etc. And make a dashboard/cockpit view for them.
+Plans to support: F1 2023, etc. And make a dashboard/cockpit view for them.
 
 ---
 
@@ -53,12 +53,14 @@ Plans to support: AC, ACC, F1 2023, etc. And make a dashboard/cockpit view for t
 ### Setup Adapters/Converters
 
 Adapters are setup separately for every game.
-The correct adapter setup schema is: `adapter-name:variable1:variable2:etc`. For multiple adapters configuration use comma.
+The correct adapter setup schema is: `adapter-name:variable1:variable2:etc`.
+For multiple adapters configuration use comma, eg: `adapter1:var1:var2,adapter2:var3:var4`.
 
 Currently two adaters are supported:
 
 1. [CSV](#csv-adapter)
 2. [MySQL/MariaDB](#mysql-adapter)
+3. [UDP forwarder](#udp-forwarder)
 
 #### CSV Adapter
 Example: `csv:./data/forzams2023:daily`
@@ -72,3 +74,12 @@ Example: `mysql:user:password:host:3306:database`
 * `host` a MySQL host
 * `3306` a MySQL port
 * `database` a MySQL database name
+
+#### UDP forwarder
+This adapter can forward the UDP packets to another IPs addresses.
+
+Example: `udp:192.168.5.38:9999&192.168.5.26:9999`
+* `ip` a MySQL user
+* `port` a MySQL password
+
+More IPs and ports can be added with `&` separator.

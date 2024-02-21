@@ -3,6 +3,7 @@ package converter
 import (
 	"errors"
 	"fmt"
+	"github.com/bluemanos/simracing-telemetry/src/telemetry"
 	"log"
 	"os"
 	"path/filepath"
@@ -26,7 +27,7 @@ type CsvConverter struct {
 }
 
 // Convert the data to CSV format and writes it to the file
-func (csv CsvConverter) Convert(now time.Time, data map[string]float32, keys []string) {
+func (csv CsvConverter) Convert(now time.Time, data telemetry.GameData) {
 	afs := &afero.Afero{Fs: csv.Fs}
 	filePath, err := csv.correctFilePath(now)
 	if err != nil {
@@ -41,7 +42,7 @@ func (csv CsvConverter) Convert(now time.Time, data map[string]float32, keys []s
 	}
 	if !fileExists {
 		csvHeader := ""
-		for _, key := range keys {
+		for _, key := range data.Keys {
 			csvHeader += fmt.Sprintf(",%s", key)
 		}
 		csvHeader = csvHeader + "\n"
@@ -62,8 +63,8 @@ func (csv CsvConverter) Convert(now time.Time, data map[string]float32, keys []s
 	}
 
 	csvLine := ""
-	for _, key := range keys {
-		csvLine += fmt.Sprintf(",%v", data[key])
+	for _, key := range data.Keys {
+		csvLine += fmt.Sprintf(",%v", data.Data[key])
 	}
 	csvLine += "\n"
 	fmt.Fprintf(csv.fileHandler, csvLine[1:])

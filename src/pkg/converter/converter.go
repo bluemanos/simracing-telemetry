@@ -7,6 +7,7 @@ import (
 	"github.com/spf13/afero"
 	"log"
 	"os"
+	"strconv"
 	"strings"
 	"time"
 
@@ -27,7 +28,7 @@ type gameConfiguration struct {
 }
 
 type ConverterInterface interface {
-	Convert(now time.Time, data map[string]telemetry.TelemetryData, keys []string)
+	Convert(now time.Time, data telemetry.GameData)
 }
 
 type ConverterData struct {
@@ -87,6 +88,35 @@ func SetupAdapter(game enums.Game) []telemetry.ConverterInterface {
 				connector: db,
 			})
 			log.Printf("[%s] MySQL adapter configured", game)
+		case "udp":
+			udpClients := strings.Split(strings.Join(adapterConfiguration[1:], ":"), "&")
+			var udpClientsList []UdpClient
+			for _, udpClient := range udpClients {
+				udpClientConfiguration := strings.Split(udpClient, ":")
+				if len(udpClientConfiguration) != 2 {
+					log.Printf("[%s] Wrong UDP adapter configuration: %s", game, udpClient)
+					continue
+				}
+				port, err := strconv.Atoi(udpClientConfiguration[1])
+				if err != nil {
+					log.Printf("[%s] Wrong UDP adapter configuration: %s", game, udpClient)
+					continue
+				}
+
+				udpClientsList = append(udpClientsList, UdpClient{
+					host: udpClientConfiguration[0],
+					port: port,
+				})
+			}
+
+			converters = append(converters, UdpForwarder{
+				ConverterData: ConverterData{
+					GameName: game,
+				},
+				Clients: udpClientsList,
+			})
+			log.Printf("[%s] UDP adapter configured", game)
+			log.Printf("[%s] UDP adapters: %v", game, udpClientsList)
 		}
 	}
 	return converters

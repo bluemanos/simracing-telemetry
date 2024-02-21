@@ -3,6 +3,7 @@ package converter
 import (
 	"database/sql"
 	"fmt"
+	"github.com/bluemanos/simracing-telemetry/src/telemetry"
 	"log"
 	"time"
 
@@ -17,7 +18,7 @@ type MySqlConverter struct {
 }
 
 // Convert converts the data to the MySQL database
-func (db MySqlConverter) Convert(_ time.Time, data map[string]float32, keys []string) {
+func (db MySqlConverter) Convert(_ time.Time, data telemetry.GameData) {
 	if db.connector == nil {
 		fmt.Println("Reconnecting to MySQL...")
 		var err error
@@ -28,12 +29,12 @@ func (db MySqlConverter) Convert(_ time.Time, data map[string]float32, keys []st
 		}
 	}
 
-	values := make([]interface{}, len(keys))
-	for i, key := range keys {
-		values[i] = data[key]
+	values := make([]interface{}, len(data.Keys))
+	for i, key := range data.Keys {
+		values[i] = data.Data[key]
 	}
 
-	queryInsertBuilder := sq.Insert(db.TableName).Columns(keys...).Values(values...)
+	queryInsertBuilder := sq.Insert(db.TableName).Columns(data.Keys...).Values(values...)
 	query, args, err := queryInsertBuilder.ToSql()
 	if err != nil {
 		log.Println(err)
