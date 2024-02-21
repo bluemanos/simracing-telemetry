@@ -1,9 +1,6 @@
 package main
 
 import (
-	"flag"
-	"fmt"
-	"github.com/bluemanos/simracing-telemetry/test"
 	"log"
 	"os"
 	"strconv"
@@ -13,12 +10,6 @@ import (
 )
 
 func main() {
-	if flag.Lookup("test-server") != nil {
-		fmt.Printf("%+v\n", "echo server")
-		test.Run()
-		return
-	}
-
 	debugMode := os.Getenv("DEBUG_MODE")
 
 	fm := fms2023.NewForzaMotorsportHandler(debugMode)
