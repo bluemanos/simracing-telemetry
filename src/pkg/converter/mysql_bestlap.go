@@ -38,7 +38,7 @@ func (db *MysqlBestLapConverter) Convert(_ time.Time, data telemetry.GameData, p
 		}
 	}
 
-	if data.Data["BestLap"] != 0 && db.bestLapExists(port, data.Data["BestLap"], data.Data["TrackOrdinal"], data.Data["CarOrdinal"]) {
+	if data.Data["BestLap"] == 0 || db.bestLapExists(port, data.Data["BestLap"], data.Data["TrackOrdinal"], data.Data["CarOrdinal"]) {
 		return
 	}
 
