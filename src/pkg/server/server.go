@@ -1,9 +1,9 @@
 package server
 
-type HandleConnection func(buffer []byte)
+type HandleConnection func(buffer []byte, port int)
 
 type Server interface {
-	Run(fn HandleConnection) error
+	Run(fn HandleConnection, port int) error
 	Close() error
 }
 

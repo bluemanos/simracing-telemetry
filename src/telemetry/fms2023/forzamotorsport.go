@@ -39,7 +39,7 @@ func (fm *ForzaMotorsportHandler) InitAndRun(port int) error {
 
 	log.Printf("Forza data out server listening on %s:%d, waiting for Forza data...\n", telemetry.GetOutboundIP(), port)
 
-	err := udpServer.Run(fm.processBuffer)
+	err := udpServer.Run(fm.processBuffer, port)
 	if err != nil {
 		return err
 	}
@@ -92,7 +92,7 @@ func (fm *ForzaMotorsportHandler) initTelemetry() (map[string]telemetry.Telemetr
 }
 
 // processBuffer processes the received data
-func (fm *ForzaMotorsportHandler) processBuffer(buffer []byte) {
+func (fm *ForzaMotorsportHandler) processBuffer(buffer []byte, port int) {
 	tempTelemetry := make(map[string]float32, len(fm.Telemetries))
 
 	for i, telemetryObj := range fm.Telemetries {
@@ -131,6 +131,6 @@ func (fm *ForzaMotorsportHandler) processBuffer(buffer []byte) {
 	}
 
 	for _, adapter := range fm.Adapters {
-		go adapter.Convert(time.Now(), data)
+		go adapter.Convert(time.Now(), data, port)
 	}
 }

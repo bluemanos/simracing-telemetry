@@ -27,7 +27,7 @@ type CsvConverter struct {
 }
 
 // Convert the data to CSV format and writes it to the file
-func (csv CsvConverter) Convert(now time.Time, data telemetry.GameData) {
+func (csv *CsvConverter) Convert(now time.Time, data telemetry.GameData, port int) {
 	afs := &afero.Afero{Fs: csv.Fs}
 	filePath, err := csv.correctFilePath(now)
 	if err != nil {
@@ -71,7 +71,7 @@ func (csv CsvConverter) Convert(now time.Time, data telemetry.GameData) {
 }
 
 // correctFilePath returns the correct file path based on the retention type
-func (csv CsvConverter) correctFilePath(now time.Time) (string, error) {
+func (csv *CsvConverter) correctFilePath(now time.Time) (string, error) {
 	afs := &afero.Afero{Fs: csv.Fs}
 
 	switch csv.Retention {
@@ -85,7 +85,7 @@ func (csv CsvConverter) correctFilePath(now time.Time) (string, error) {
 }
 
 // dailyRetention validate and returns the file path for daily retention
-func (csv CsvConverter) dailyRetention(now time.Time, afs *afero.Afero) (string, error) {
+func (csv *CsvConverter) dailyRetention(now time.Time, afs *afero.Afero) (string, error) {
 	isDir, err := afs.IsDir(csv.FilePath)
 	if err != nil || !isDir {
 		return "", errInvalidFilePath
@@ -102,7 +102,7 @@ func (csv CsvConverter) dailyRetention(now time.Time, afs *afero.Afero) (string,
 }
 
 // noRetention validate and returns the file path for no retention type
-func (csv CsvConverter) noRetention(_ time.Time, afs *afero.Afero) (string, error) {
+func (csv *CsvConverter) noRetention(_ time.Time, afs *afero.Afero) (string, error) {
 	defaultFileName := fmt.Sprintf("%s.csv", csv.GameName)
 
 	dir, file := filepath.Split(csv.FilePath)

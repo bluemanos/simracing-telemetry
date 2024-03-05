@@ -22,7 +22,7 @@ type UdpClient struct {
 }
 
 // Convert converts the data to the UDP clients
-func (udp UdpForwarder) Convert(_ time.Time, data telemetry.GameData) {
+func (udp *UdpForwarder) Convert(_ time.Time, data telemetry.GameData, port int) {
 	for _, client := range udp.Clients {
 		if client.connection == nil {
 			udp.connectToClient(&client)
@@ -32,7 +32,7 @@ func (udp UdpForwarder) Convert(_ time.Time, data telemetry.GameData) {
 	}
 }
 
-func (udp UdpForwarder) connectToClient(client *UdpClient) {
+func (udp *UdpForwarder) connectToClient(client *UdpClient) {
 	var err error
 	address := client.host + ":" + strconv.Itoa(client.port)
 	client.addr, err = net.ResolveUDPAddr("udp", address)

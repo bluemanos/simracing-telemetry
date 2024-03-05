@@ -3,11 +3,11 @@ package converter
 import (
 	"database/sql"
 	"fmt"
-	"github.com/bluemanos/simracing-telemetry/src/telemetry"
 	"log"
 	"time"
 
 	sq "github.com/Masterminds/squirrel"
+	"github.com/bluemanos/simracing-telemetry/src/telemetry"
 	_ "github.com/go-sql-driver/mysql"
 )
 
@@ -18,7 +18,7 @@ type MySqlConverter struct {
 }
 
 // Convert converts the data to the MySQL database
-func (db MySqlConverter) Convert(_ time.Time, data telemetry.GameData) {
+func (db *MySqlConverter) Convert(_ time.Time, data telemetry.GameData, port int) {
 	if db.connector == nil {
 		fmt.Println("Reconnecting to MySQL...")
 		var err error

@@ -13,7 +13,7 @@ type GameData struct {
 }
 
 type ConverterInterface interface {
-	Convert(now time.Time, data GameData)
+	Convert(now time.Time, data GameData, port int)
 }
 
 type TelemetryInterface interface {

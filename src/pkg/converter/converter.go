@@ -28,7 +28,7 @@ type gameConfiguration struct {
 }
 
 type ConverterInterface interface {
-	Convert(now time.Time, data telemetry.GameData)
+	Convert(now time.Time, data telemetry.GameData, port int)
 }
 
 type ConverterData struct {
@@ -50,7 +50,7 @@ func SetupAdapter(game enums.Game) []telemetry.ConverterInterface {
 				continue
 			}
 
-			converters = append(converters, CsvConverter{
+			converters = append(converters, &CsvConverter{
 				ConverterData: ConverterData{
 					GameName: game,
 				},
@@ -75,7 +75,7 @@ func SetupAdapter(game enums.Game) []telemetry.ConverterInterface {
 				}
 			}
 
-			converters = append(converters, MySqlConverter{
+			converters = append(converters, &MySqlConverter{
 				ConverterData: ConverterData{
 					GameName: game,
 				},
@@ -88,6 +88,35 @@ func SetupAdapter(game enums.Game) []telemetry.ConverterInterface {
 				connector: db,
 			})
 			log.Printf("[%s] MySQL adapter configured", game)
+		case "mysql_bl":
+			if len(adapterConfiguration) != 6 {
+				log.Printf("[%s] Wrong MySQL BL adapter configuration", game)
+				continue
+			}
+
+			var db *sql.DB
+			if flag.Lookup("test.v") == nil {
+				var err error
+				db, err = sql.Open("mysql", fmt.Sprintf("%s:%s@tcp(%s:%s)/%s", adapterConfiguration[1], adapterConfiguration[2], adapterConfiguration[3], adapterConfiguration[4], adapterConfiguration[5]))
+				if err != nil {
+					log.Println(err)
+					continue
+				}
+			}
+
+			converters = append(converters, &MysqlBestLapConverter{
+				ConverterData: ConverterData{
+					GameName: game,
+				},
+				User:      adapterConfiguration[1],
+				Password:  adapterConfiguration[2],
+				Host:      adapterConfiguration[3],
+				Port:      adapterConfiguration[4],
+				Database:  adapterConfiguration[5],
+				TableName: "tmd_forzamotorsport2023_bestlaps",
+				connector: db,
+			})
+			log.Printf("[%s] MySQL BL adapter configured", game)
 		case "udp":
 			udpClients := strings.Split(strings.Join(adapterConfiguration[1:], ":"), "&")
 			var udpClientsList []UdpClient
@@ -109,7 +138,7 @@ func SetupAdapter(game enums.Game) []telemetry.ConverterInterface {
 				})
 			}
 
-			converters = append(converters, UdpForwarder{
+			converters = append(converters, &UdpForwarder{
 				ConverterData: ConverterData{
 					GameName: game,
 				},

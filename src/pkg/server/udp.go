@@ -12,7 +12,7 @@ type UDPServer struct {
 }
 
 // Run starts the UDP server.
-func (u *UDPServer) Run(fn HandleConnection) (err error) {
+func (u *UDPServer) Run(fn HandleConnection, port int) (err error) {
 	laddr, err := net.ResolveUDPAddr("udp", u.Addr)
 	if err != nil {
 		return errors.New("could not resolve UDP addr")
@@ -35,7 +35,7 @@ func (u *UDPServer) Run(fn HandleConnection) (err error) {
 			continue
 		}
 
-		go fn(buf[:n])
+		go fn(buf[:n], port)
 	}
 	return nil
 }
