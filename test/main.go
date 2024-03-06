@@ -6,6 +6,7 @@ import (
 	"runtime"
 )
 
+//nolint:dogsled
 func init() {
 	_, filename, _, _ := runtime.Caller(0)
 	dir := path.Join(path.Dir(filename), "..")

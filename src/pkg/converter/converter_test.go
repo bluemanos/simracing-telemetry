@@ -1,14 +1,16 @@
-package converter
+package converter_test
 
 import (
 	"bytes"
+	"log"
+	"os"
+	"testing"
+
+	"github.com/bluemanos/simracing-telemetry/src/pkg/converter"
 	"github.com/bluemanos/simracing-telemetry/src/pkg/enums"
 	"github.com/bluemanos/simracing-telemetry/src/telemetry"
 	"github.com/spf13/afero"
 	"github.com/stretchr/testify/assert"
-	"log"
-	"os"
-	"testing"
 )
 
 var testExpectedMissingCsv = "[fms2023] Wrong CSV adapter configuration"
@@ -28,8 +30,8 @@ func TestSetupAdapter(t *testing.T) {
 				t.Setenv("TMD_FORZAM_ADAPTERS", "csv:/var/log/simracing-telemetry/fms2023-daily.csv:daily")
 			},
 			expectedAdapters: []telemetry.ConverterInterface{
-				&CsvConverter{
-					ConverterData: ConverterData{
+				&converter.CsvConverter{
+					ConverterData: converter.ConverterData{
 						GameName: enums.Games.ForzaMotorsport2023(),
 					},
 					Fs:        afero.NewOsFs(),
@@ -54,8 +56,8 @@ func TestSetupAdapter(t *testing.T) {
 				t.Setenv("TMD_FORZAM_ADAPTERS", "mysql:user:pass:db:3306:app")
 			},
 			expectedAdapters: []telemetry.ConverterInterface{
-				&MySqlConverter{
-					ConverterData: ConverterData{
+				&converter.MySQLConverter{
+					ConverterData: converter.ConverterData{
 						GameName: enums.Games.ForzaMotorsport2023(),
 					},
 					User:      "user",
@@ -80,7 +82,7 @@ func TestSetupAdapter(t *testing.T) {
 				}()
 			}
 
-			adapters := SetupAdapter(tc.game)
+			adapters := converter.SetupAdapter(tc.game)
 			assert.Equal(t, tc.expectedAdapters, adapters)
 
 			if tc.expectedLogs != nil {

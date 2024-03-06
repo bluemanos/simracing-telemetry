@@ -1,33 +1,36 @@
-package converter
+package converter_test
 
 import (
+	"testing"
+	"time"
+
+	"github.com/bluemanos/simracing-telemetry/src/pkg/converter"
 	"github.com/bluemanos/simracing-telemetry/src/pkg/enums"
 	"github.com/bluemanos/simracing-telemetry/src/telemetry"
 	"github.com/spf13/afero"
 	"github.com/stretchr/testify/assert"
-	"testing"
-	"time"
 )
 
+//nolint:errcheck
 func TestCsvFilename(t *testing.T) {
 	t.Parallel()
 
 	fs := afero.NewMemMapFs()
-	fs.MkdirAll("/var/log/simracing-telemetry", 0755)
-	fs.MkdirAll("relative/path/simracing-telemetry", 0755)
+	fs.MkdirAll("/var/log/simracing-telemetry", 0o755)
+	fs.MkdirAll("relative/path/simracing-telemetry", 0o755)
 
 	tt := []struct {
 		testName         string
 		time             time.Time
-		converterSetup   CsvConverter
+		converterSetup   converter.CsvConverter
 		expectedFilePath string
 		expectedError    error
 	}{
 		{
 			testName: "daily: path with trailing slash",
 			time:     time.Date(2021, 1, 1, 0, 0, 0, 0, time.UTC),
-			converterSetup: CsvConverter{
-				ConverterData: ConverterData{
+			converterSetup: converter.CsvConverter{
+				ConverterData: converter.ConverterData{
 					GameName: enums.Games.ForzaMotorsport2023(),
 				},
 				Fs:        fs,
@@ -39,8 +42,8 @@ func TestCsvFilename(t *testing.T) {
 		{
 			testName: "daily: path without trailing slash",
 			time:     time.Date(2021, 1, 1, 0, 0, 0, 0, time.UTC),
-			converterSetup: CsvConverter{
-				ConverterData: ConverterData{
+			converterSetup: converter.CsvConverter{
+				ConverterData: converter.ConverterData{
 					GameName: enums.Games.ForzaMotorsport2023(),
 				},
 				Fs:        fs,
@@ -52,8 +55,8 @@ func TestCsvFilename(t *testing.T) {
 		{
 			testName: "daily: path with filename",
 			time:     time.Date(2021, 1, 1, 0, 0, 0, 0, time.UTC),
-			converterSetup: CsvConverter{
-				ConverterData: ConverterData{
+			converterSetup: converter.CsvConverter{
+				ConverterData: converter.ConverterData{
 					GameName: enums.Games.ForzaMotorsport2023(),
 				},
 				Fs:        fs,
@@ -61,13 +64,13 @@ func TestCsvFilename(t *testing.T) {
 				Retention: enums.RetentionTypes.Daily(),
 			},
 			expectedFilePath: "",
-			expectedError:    errInvalidFilePath,
+			expectedError:    converter.ErrInvalidFilePath,
 		},
 		{
 			testName: "daily: path not exists",
 			time:     time.Date(2021, 1, 1, 0, 0, 0, 0, time.UTC),
-			converterSetup: CsvConverter{
-				ConverterData: ConverterData{
+			converterSetup: converter.CsvConverter{
+				ConverterData: converter.ConverterData{
 					GameName: enums.Games.ForzaMotorsport2023(),
 				},
 				Fs:        fs,
@@ -75,13 +78,13 @@ func TestCsvFilename(t *testing.T) {
 				Retention: enums.RetentionTypes.Daily(),
 			},
 			expectedFilePath: "",
-			expectedError:    errInvalidFilePath,
+			expectedError:    converter.ErrInvalidFilePath,
 		},
 		{
 			testName: "daily: relative path not exists",
 			time:     time.Date(2021, 1, 1, 0, 0, 0, 0, time.UTC),
-			converterSetup: CsvConverter{
-				ConverterData: ConverterData{
+			converterSetup: converter.CsvConverter{
+				ConverterData: converter.ConverterData{
 					GameName: enums.Games.ForzaMotorsport2023(),
 				},
 				Fs:        fs,
@@ -89,13 +92,13 @@ func TestCsvFilename(t *testing.T) {
 				Retention: enums.RetentionTypes.Daily(),
 			},
 			expectedFilePath: "",
-			expectedError:    errInvalidFilePath,
+			expectedError:    converter.ErrInvalidFilePath,
 		},
 		{
 			testName: "daily: relative path with trailing slash",
 			time:     time.Date(2021, 1, 1, 0, 0, 0, 0, time.UTC),
-			converterSetup: CsvConverter{
-				ConverterData: ConverterData{
+			converterSetup: converter.CsvConverter{
+				ConverterData: converter.ConverterData{
 					GameName: enums.Games.ForzaMotorsport2023(),
 				},
 				Fs:        fs,
@@ -107,8 +110,8 @@ func TestCsvFilename(t *testing.T) {
 		{
 			testName: "no retention: path with trailing slash",
 			time:     time.Date(2021, 1, 1, 0, 0, 0, 0, time.UTC),
-			converterSetup: CsvConverter{
-				ConverterData: ConverterData{
+			converterSetup: converter.CsvConverter{
+				ConverterData: converter.ConverterData{
 					GameName: enums.Games.ForzaMotorsport2023(),
 				},
 				Fs:        fs,
@@ -120,8 +123,8 @@ func TestCsvFilename(t *testing.T) {
 		{
 			testName: "no retention: path with trailing slash",
 			time:     time.Date(2021, 1, 1, 0, 0, 0, 0, time.UTC),
-			converterSetup: CsvConverter{
-				ConverterData: ConverterData{
+			converterSetup: converter.CsvConverter{
+				ConverterData: converter.ConverterData{
 					GameName: enums.Games.ForzaMotorsport2023(),
 				},
 				Fs:        fs,
@@ -133,8 +136,8 @@ func TestCsvFilename(t *testing.T) {
 		{
 			testName: "no retention: path not exists",
 			time:     time.Date(2021, 1, 1, 0, 0, 0, 0, time.UTC),
-			converterSetup: CsvConverter{
-				ConverterData: ConverterData{
+			converterSetup: converter.CsvConverter{
+				ConverterData: converter.ConverterData{
 					GameName: enums.Games.ForzaMotorsport2023(),
 				},
 				Fs:        fs,
@@ -142,13 +145,13 @@ func TestCsvFilename(t *testing.T) {
 				Retention: enums.RetentionTypes.None(),
 			},
 			expectedFilePath: "",
-			expectedError:    errInvalidFilePath,
+			expectedError:    converter.ErrInvalidFilePath,
 		},
 		{
 			testName: "no retention: path with filename",
 			time:     time.Date(2021, 1, 1, 0, 0, 0, 0, time.UTC),
-			converterSetup: CsvConverter{
-				ConverterData: ConverterData{
+			converterSetup: converter.CsvConverter{
+				ConverterData: converter.ConverterData{
 					GameName: enums.Games.ForzaMotorsport2023(),
 				},
 				Fs:        fs,
@@ -163,21 +166,22 @@ func TestCsvFilename(t *testing.T) {
 		test := tt[i]
 		t.Run(test.testName, func(t *testing.T) {
 			t.Parallel()
-			filePath, err := test.converterSetup.correctFilePath(test.time)
+			filePath, err := test.converterSetup.CorrectFilePath(test.time)
 			assert.Equal(t, test.expectedFilePath, filePath)
 			assert.Equal(t, test.expectedError, err)
 		})
 	}
 }
 
+//nolint:errcheck
 func TestCsvConvert(t *testing.T) {
 	now := time.Date(2023, 12, 24, 0, 1, 2, 333, time.UTC)
 
 	fs := afero.NewMemMapFs()
-	fs.MkdirAll("/var/www/simracing-telemetry", 0755)
+	fs.MkdirAll("/var/www/simracing-telemetry", 0o755)
 
-	converter := CsvConverter{
-		ConverterData: ConverterData{
+	converter := converter.CsvConverter{
+		ConverterData: converter.ConverterData{
 			GameName: enums.Games.ForzaMotorsport2023(),
 		},
 		Fs:        fs,

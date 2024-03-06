@@ -9,13 +9,20 @@ import (
 
 // GetOutboundIP finds preferred outbound ip of this machine
 func GetOutboundIP() net.IP {
-	conn, err := net.Dial("udp", "1.2.3.4:4321") // Destination does not need to exist, using this to see which is the primary network interface
+	conn, err := net.Dial(
+		"udp",
+		"1.2.3.4:4321",
+	) // Destination does not need to exist, using this to see which is the primary network interface
 	if err != nil {
 		log.Fatal(err)
 	}
 	defer conn.Close()
 
-	localAddr := conn.LocalAddr().(*net.UDPAddr)
+	localAddr, ok := conn.LocalAddr().(*net.UDPAddr)
+	if !ok {
+		log.Fatal("Failed to get local address")
+		return nil
+	}
 
 	return localAddr.IP
 }

@@ -1,12 +1,8 @@
 package converter
 
 import (
-	"database/sql"
-	"flag"
-	"fmt"
 	"log"
 	"os"
-	"strconv"
 	"strings"
 	"time"
 
@@ -46,115 +42,37 @@ func SetupAdapter(game enums.Game) []telemetry.ConverterInterface {
 		adapterConfiguration := strings.Split(adapter, ":")
 		switch adapterConfiguration[0] {
 		case "csv":
-			if len(adapterConfiguration) != 3 {
-				log.Printf("[%s] Wrong CSV adapter configuration", game)
+			config, err := NewCsvConverter(game, adapterConfiguration, afero.NewOsFs())
+			if err != nil {
+				log.Println(err)
 				continue
 			}
-
-			converters = append(converters, &CsvConverter{
-				ConverterData: ConverterData{
-					GameName: game,
-				},
-				Fs:        afero.NewOsFs(),
-				FilePath:  adapterConfiguration[1],
-				Retention: enums.RetentionType(adapterConfiguration[2]),
-			})
+			converters = append(converters, config)
 			log.Printf("[%s] CSV adapter configured", game)
 		case "mysql":
-			if len(adapterConfiguration) != 6 {
-				log.Printf("[%s] Wrong MySQL adapter configuration", game)
+			config, err := NewMySQLConverter(game, adapterConfiguration)
+			if err != nil {
+				log.Println(err)
 				continue
 			}
-
-			var db *sql.DB
-			if flag.Lookup("test.v") == nil {
-				var err error
-				db, err = sql.Open("mysql", fmt.Sprintf("%s:%s@tcp(%s:%s)/%s", adapterConfiguration[1], adapterConfiguration[2], adapterConfiguration[3], adapterConfiguration[4], adapterConfiguration[5]))
-				if err != nil {
-					log.Println(err)
-					continue
-				}
-				db.SetConnMaxLifetime(time.Minute * 5)
-				db.SetMaxOpenConns(10)
-				db.SetMaxIdleConns(10)
-				fmt.Println("Connected to MySQL")
-			}
-
-			converters = append(converters, &MySqlConverter{
-				ConverterData: ConverterData{
-					GameName: game,
-				},
-				User:      adapterConfiguration[1],
-				Password:  adapterConfiguration[2],
-				Host:      adapterConfiguration[3],
-				Port:      adapterConfiguration[4],
-				Database:  adapterConfiguration[5],
-				TableName: gameEnvKeys[game].DatabaseTable,
-				connector: db,
-			})
+			converters = append(converters, config)
 			log.Printf("[%s] MySQL adapter configured", game)
 		case "mysql_bl":
-			if len(adapterConfiguration) != 6 {
-				log.Printf("[%s] Wrong MySQL BL adapter configuration", game)
+			config, err := NewMysqlBestLapConverter(game, adapterConfiguration)
+			if err != nil {
+				log.Println(err)
 				continue
 			}
-
-			var db *sql.DB
-			if flag.Lookup("test.v") == nil {
-				var err error
-				db, err = sql.Open("mysql", fmt.Sprintf("%s:%s@tcp(%s:%s)/%s", adapterConfiguration[1], adapterConfiguration[2], adapterConfiguration[3], adapterConfiguration[4], adapterConfiguration[5]))
-				if err != nil {
-					log.Println(err)
-					continue
-				}
-				db.SetConnMaxLifetime(time.Minute * 5)
-				db.SetMaxOpenConns(10)
-				db.SetMaxIdleConns(10)
-				fmt.Println("Connected to MySQL BL")
-			}
-
-			converters = append(converters, &MysqlBestLapConverter{
-				ConverterData: ConverterData{
-					GameName: game,
-				},
-				User:      adapterConfiguration[1],
-				Password:  adapterConfiguration[2],
-				Host:      adapterConfiguration[3],
-				Port:      adapterConfiguration[4],
-				Database:  adapterConfiguration[5],
-				TableName: "tmd_forzamotorsport2023_bestlaps",
-				connector: db,
-			})
+			converters = append(converters, config)
 			log.Printf("[%s] MySQL BL adapter configured", game)
 		case "udp":
-			udpClients := strings.Split(strings.Join(adapterConfiguration[1:], ":"), "&")
-			var udpClientsList []UdpClient
-			for _, udpClient := range udpClients {
-				udpClientConfiguration := strings.Split(udpClient, ":")
-				if len(udpClientConfiguration) != 2 {
-					log.Printf("[%s] Wrong UDP adapter configuration: %s", game, udpClient)
-					continue
-				}
-				port, err := strconv.Atoi(udpClientConfiguration[1])
-				if err != nil {
-					log.Printf("[%s] Wrong UDP adapter configuration: %s", game, udpClient)
-					continue
-				}
-
-				udpClientsList = append(udpClientsList, UdpClient{
-					host: udpClientConfiguration[0],
-					port: port,
-				})
+			config, err := NewUdpForwarder(game, adapterConfiguration)
+			if err != nil {
+				log.Println(err)
+				continue
 			}
-
-			converters = append(converters, &UdpForwarder{
-				ConverterData: ConverterData{
-					GameName: game,
-				},
-				Clients: udpClientsList,
-			})
+			converters = append(converters, config)
 			log.Printf("[%s] UDP adapter configured", game)
-			log.Printf("[%s] UDP adapters: %v", game, udpClientsList)
 		}
 	}
 	return converters

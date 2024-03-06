@@ -1,24 +1,15 @@
-package server
+package server_test
 
 import (
 	"errors"
-	"github.com/stretchr/testify/assert"
 	"net"
 	"testing"
 	"time"
+
+	"github.com/stretchr/testify/assert"
 )
 
-const (
-	udpPort = ":6250"
-)
-
-func init() {
-	udp := NewServer(udpPort)
-
-	go func() {
-		udp.Run(func([]byte, int) {}, 1234)
-	}()
-}
+const udpPort = ":6250"
 
 func TestServer_Running(t *testing.T) {
 	servers := []struct {
@@ -53,6 +44,7 @@ func TestServer_Request(t *testing.T) {
 	}
 
 	for _, tc := range tt {
+		tc := tc
 		t.Run(tc.testName, func(t *testing.T) {
 			t.Parallel()
 			conn, err := net.DialTimeout("udp", udpPort, time.Second)

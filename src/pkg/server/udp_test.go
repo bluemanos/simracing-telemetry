@@ -1,10 +1,14 @@
-package server
+package server_test
 
-import "testing"
+import (
+	"testing"
+
+	"github.com/bluemanos/simracing-telemetry/src/pkg/server"
+)
 
 func TestUdpServer(t *testing.T) {
 	t.Run("should return error when could not resolve UDP addr", func(t *testing.T) {
-		udpServer := &UDPServer{
+		udpServer := &server.UDPServer{
 			Addr: "invalid",
 		}
 
@@ -16,7 +20,7 @@ func TestUdpServer(t *testing.T) {
 	})
 
 	t.Run("should run successful", func(t *testing.T) {
-		udpServer := &UDPServer{
+		udpServer := &server.UDPServer{
 			Addr: ":1234",
 		}
 

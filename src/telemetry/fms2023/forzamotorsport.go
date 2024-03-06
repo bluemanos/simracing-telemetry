@@ -2,18 +2,19 @@ package fms2023
 
 import (
 	"encoding/binary"
-	"github.com/bluemanos/simracing-telemetry/src/pkg/converter"
-	"github.com/bluemanos/simracing-telemetry/src/pkg/enums"
-	"github.com/bluemanos/simracing-telemetry/src/pkg/server"
-	"github.com/bluemanos/simracing-telemetry/src/telemetry"
 	"log"
 	"math"
 	"strconv"
 	"strings"
 	"time"
+
+	"github.com/bluemanos/simracing-telemetry/src/pkg/converter"
+	"github.com/bluemanos/simracing-telemetry/src/pkg/enums"
+	"github.com/bluemanos/simracing-telemetry/src/pkg/server"
+	"github.com/bluemanos/simracing-telemetry/src/telemetry"
 )
 
-const dataFormatFile = "forzamotorsport"
+const DataFormatFile = "forzamotorsport"
 
 type ForzaMotorsportHandler struct {
 	telemetry.TelemetryHandler
@@ -35,20 +36,20 @@ func (fm *ForzaMotorsportHandler) InitAndRun(port int) error {
 	udpServer := server.UDPServer{
 		Addr: "0.0.0.0:" + strconv.Itoa(port),
 	}
-	fm.Telemetries, fm.Keys = fm.initTelemetry()
+	fm.Telemetries, fm.Keys = fm.InitTelemetry()
 
 	log.Printf("Forza data out server listening on %s:%d, waiting for Forza data...\n", telemetry.GetOutboundIP(), port)
 
-	err := udpServer.Run(fm.processBuffer, port)
+	err := udpServer.Run(fm.ProcessBuffer, port)
 	if err != nil {
 		return err
 	}
 	return nil
 }
 
-// initTelemetry initializes the telemetry data
-func (fm *ForzaMotorsportHandler) initTelemetry() (map[string]telemetry.TelemetryData, []string) {
-	lines, err := telemetry.ReadLines("fms2023/" + dataFormatFile)
+// InitTelemetry initializes the telemetry data
+func (fm *ForzaMotorsportHandler) InitTelemetry() (map[string]telemetry.TelemetryData, []string) {
+	lines, err := telemetry.ReadLines("fms2023/" + DataFormatFile)
 	if err != nil {
 		log.Fatalf("Error reading format file: %s", err)
 	}
@@ -91,8 +92,8 @@ func (fm *ForzaMotorsportHandler) initTelemetry() (map[string]telemetry.Telemetr
 	return telemetryArray, telemetryKeys
 }
 
-// processBuffer processes the received data
-func (fm *ForzaMotorsportHandler) processBuffer(buffer []byte, port int) {
+// ProcessBuffer processes the received data
+func (fm *ForzaMotorsportHandler) ProcessBuffer(buffer []byte, port int) {
 	tempTelemetry := make(map[string]float32, len(fm.Telemetries))
 
 	for i, telemetryObj := range fm.Telemetries {

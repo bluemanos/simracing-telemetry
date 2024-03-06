@@ -3,19 +3,20 @@ package converter
 import (
 	"errors"
 	"fmt"
-	"github.com/bluemanos/simracing-telemetry/src/telemetry"
 	"log"
 	"os"
 	"path/filepath"
 	"time"
 
 	"github.com/bluemanos/simracing-telemetry/src/pkg/enums"
+	"github.com/bluemanos/simracing-telemetry/src/telemetry"
 	"github.com/spf13/afero"
 )
 
 var (
-	errInvalidFilePath  = errors.New("[CSV] invalid file path")
-	errInvalidRetention = errors.New("[CSV] invalid retention type")
+	ErrInvalidCsvAdapterConfiguration = errors.New("[CSV] invalid adapter configuration")
+	ErrInvalidFilePath                = errors.New("[CSV] invalid file path")
+	ErrInvalidRetention               = errors.New("[CSV] invalid retention type")
 )
 
 type CsvConverter struct {
@@ -26,10 +27,24 @@ type CsvConverter struct {
 	fileHandler afero.File
 }
 
+func NewCsvConverter(game enums.Game, adapterConfiguration []string, fs afero.Fs) (*CsvConverter, error) {
+	if len(adapterConfiguration) != 3 {
+		log.Printf("[%s] Wrong CSV adapter configuration", game)
+		return nil, ErrInvalidCsvAdapterConfiguration
+	}
+
+	return &CsvConverter{
+		ConverterData: ConverterData{GameName: game},
+		Fs:            fs,
+		FilePath:      adapterConfiguration[1],
+		Retention:     enums.RetentionType(adapterConfiguration[2]),
+	}, nil
+}
+
 // Convert the data to CSV format and writes it to the file
-func (csv *CsvConverter) Convert(now time.Time, data telemetry.GameData, port int) {
+func (csv *CsvConverter) Convert(now time.Time, data telemetry.GameData, _ int) {
 	afs := &afero.Afero{Fs: csv.Fs}
-	filePath, err := csv.correctFilePath(now)
+	filePath, err := csv.CorrectFilePath(now)
 	if err != nil {
 		log.Fatalln(err)
 		return
@@ -46,7 +61,7 @@ func (csv *CsvConverter) Convert(now time.Time, data telemetry.GameData, port in
 			csvHeader += fmt.Sprintf(",%s", key)
 		}
 		csvHeader = csvHeader + "\n"
-		err = afs.WriteFile(filePath, []byte(csvHeader)[1:], 0644)
+		err = afs.WriteFile(filePath, []byte(csvHeader)[1:], 0o644)
 		if err != nil {
 			log.Fatalln(err)
 			return
@@ -54,7 +69,7 @@ func (csv *CsvConverter) Convert(now time.Time, data telemetry.GameData, port in
 	}
 
 	if csv.fileHandler == nil || csv.fileHandler.Name() != filePath {
-		csv.fileHandler, err = afs.OpenFile(filePath, os.O_WRONLY|os.O_APPEND, 0644)
+		csv.fileHandler, err = afs.OpenFile(filePath, os.O_WRONLY|os.O_APPEND, 0o644)
 		if err != nil {
 			log.Fatalln(err)
 			return
@@ -70,8 +85,8 @@ func (csv *CsvConverter) Convert(now time.Time, data telemetry.GameData, port in
 	fmt.Fprintf(csv.fileHandler, csvLine[1:])
 }
 
-// correctFilePath returns the correct file path based on the retention type
-func (csv *CsvConverter) correctFilePath(now time.Time) (string, error) {
+// CorrectFilePath returns the correct file path based on the retention type
+func (csv *CsvConverter) CorrectFilePath(now time.Time) (string, error) {
 	afs := &afero.Afero{Fs: csv.Fs}
 
 	switch csv.Retention {
@@ -81,14 +96,14 @@ func (csv *CsvConverter) correctFilePath(now time.Time) (string, error) {
 		return csv.noRetention(now, afs)
 	}
 
-	return "", errInvalidRetention
+	return "", ErrInvalidRetention
 }
 
 // dailyRetention validate and returns the file path for daily retention
 func (csv *CsvConverter) dailyRetention(now time.Time, afs *afero.Afero) (string, error) {
 	isDir, err := afs.IsDir(csv.FilePath)
 	if err != nil || !isDir {
-		return "", errInvalidFilePath
+		return "", ErrInvalidFilePath
 	}
 
 	defaultFileName := fmt.Sprintf("%s-daily-%s.csv", csv.GameName, now.Format("2006-01-02"))
@@ -110,7 +125,7 @@ func (csv *CsvConverter) noRetention(_ time.Time, afs *afero.Afero) (string, err
 	if file == "" {
 		isDir, err := afs.IsDir(dir)
 		if err != nil || !isDir {
-			return "", errInvalidFilePath
+			return "", ErrInvalidFilePath
 		}
 
 		return csv.FilePath + defaultFileName, nil
@@ -119,7 +134,7 @@ func (csv *CsvConverter) noRetention(_ time.Time, afs *afero.Afero) (string, err
 	fileExt := filepath.Ext(csv.FilePath)
 	isDir, err := afs.IsDir(csv.FilePath)
 	if fileExt != ".csv" && (err != nil || !isDir) {
-		return "", errInvalidFilePath
+		return "", ErrInvalidFilePath
 	}
 
 	if fileExt == ".csv" {

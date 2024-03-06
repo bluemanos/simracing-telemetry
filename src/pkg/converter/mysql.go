@@ -2,23 +2,43 @@ package converter
 
 import (
 	"database/sql"
+	"errors"
 	"fmt"
 	"log"
 	"time"
 
 	sq "github.com/Masterminds/squirrel"
+	"github.com/bluemanos/simracing-telemetry/src/pkg/enums"
 	"github.com/bluemanos/simracing-telemetry/src/telemetry"
 	_ "github.com/go-sql-driver/mysql"
 )
 
-type MySqlConverter struct {
+var ErrInvalidMySQLAdapterConfiguration = errors.New("[MySQL] invalid adapter configuration")
+
+type MySQLConverter struct {
 	ConverterData
 	User, Password, Host, Port, Database, TableName string
 	connector                                       *sql.DB
 }
 
+func NewMySQLConverter(game enums.Game, adapterConfiguration []string) (*MySQLConverter, error) {
+	if len(adapterConfiguration) != 6 {
+		return nil, ErrInvalidMySQLAdapterConfiguration
+	}
+
+	return &MySQLConverter{
+		ConverterData: ConverterData{GameName: game},
+		User:          adapterConfiguration[1],
+		Password:      adapterConfiguration[2],
+		Host:          adapterConfiguration[3],
+		Port:          adapterConfiguration[4],
+		Database:      adapterConfiguration[5],
+		TableName:     gameEnvKeys[game].DatabaseTable,
+	}, nil
+}
+
 // Convert converts the data to the MySQL database
-func (db *MySqlConverter) Convert(_ time.Time, data telemetry.GameData, port int) {
+func (db *MySQLConverter) Convert(_ time.Time, data telemetry.GameData, _ int) {
 	if data.Data["IsRaceOn"] == 0 {
 		return
 	}
@@ -26,7 +46,10 @@ func (db *MySqlConverter) Convert(_ time.Time, data telemetry.GameData, port int
 	if db.connector == nil {
 		fmt.Println("Reconnecting to MySQL...")
 		var err error
-		db.connector, err = sql.Open("mysql", fmt.Sprintf("%s:%s@tcp(%s:%s)/%s", db.User, db.Password, db.Host, db.Port, db.Database))
+		db.connector, err = sql.Open(
+			"mysql",
+			fmt.Sprintf("%s:%s@tcp(%s:%s)/%s", db.User, db.Password, db.Host, db.Port, db.Database),
+		)
 		if err != nil {
 			log.Println(err)
 			return
