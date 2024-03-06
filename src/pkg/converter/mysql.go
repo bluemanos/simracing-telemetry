@@ -19,6 +19,10 @@ type MySqlConverter struct {
 
 // Convert converts the data to the MySQL database
 func (db *MySqlConverter) Convert(_ time.Time, data telemetry.GameData, port int) {
+	if data.Data["IsRaceOn"] == 0 {
+		return
+	}
+
 	if db.connector == nil {
 		fmt.Println("Reconnecting to MySQL...")
 		var err error
@@ -27,6 +31,9 @@ func (db *MySqlConverter) Convert(_ time.Time, data telemetry.GameData, port int
 			log.Println(err)
 			return
 		}
+		db.connector.SetConnMaxLifetime(time.Minute * 5)
+		db.connector.SetMaxOpenConns(10)
+		db.connector.SetMaxIdleConns(10)
 	}
 
 	values := make([]interface{}, len(data.Keys))

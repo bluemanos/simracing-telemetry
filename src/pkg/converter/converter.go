@@ -4,7 +4,6 @@ import (
 	"database/sql"
 	"flag"
 	"fmt"
-	"github.com/spf13/afero"
 	"log"
 	"os"
 	"strconv"
@@ -13,6 +12,8 @@ import (
 
 	"github.com/bluemanos/simracing-telemetry/src/pkg/enums"
 	"github.com/bluemanos/simracing-telemetry/src/telemetry"
+	_ "github.com/go-sql-driver/mysql"
+	"github.com/spf13/afero"
 )
 
 var gameEnvKeys = map[enums.Game]gameConfiguration{
@@ -73,6 +74,10 @@ func SetupAdapter(game enums.Game) []telemetry.ConverterInterface {
 					log.Println(err)
 					continue
 				}
+				db.SetConnMaxLifetime(time.Minute * 5)
+				db.SetMaxOpenConns(10)
+				db.SetMaxIdleConns(10)
+				fmt.Println("Connected to MySQL")
 			}
 
 			converters = append(converters, &MySqlConverter{
@@ -102,6 +107,10 @@ func SetupAdapter(game enums.Game) []telemetry.ConverterInterface {
 					log.Println(err)
 					continue
 				}
+				db.SetConnMaxLifetime(time.Minute * 5)
+				db.SetMaxOpenConns(10)
+				db.SetMaxIdleConns(10)
+				fmt.Println("Connected to MySQL BL")
 			}
 
 			converters = append(converters, &MysqlBestLapConverter{

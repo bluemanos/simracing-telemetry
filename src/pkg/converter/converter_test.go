@@ -28,7 +28,7 @@ func TestSetupAdapter(t *testing.T) {
 				t.Setenv("TMD_FORZAM_ADAPTERS", "csv:/var/log/simracing-telemetry/fms2023-daily.csv:daily")
 			},
 			expectedAdapters: []telemetry.ConverterInterface{
-				CsvConverter{
+				&CsvConverter{
 					ConverterData: ConverterData{
 						GameName: enums.Games.ForzaMotorsport2023(),
 					},
@@ -54,7 +54,7 @@ func TestSetupAdapter(t *testing.T) {
 				t.Setenv("TMD_FORZAM_ADAPTERS", "mysql:user:pass:db:3306:app")
 			},
 			expectedAdapters: []telemetry.ConverterInterface{
-				MySqlConverter{
+				&MySqlConverter{
 					ConverterData: ConverterData{
 						GameName: enums.Games.ForzaMotorsport2023(),
 					},

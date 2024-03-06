@@ -192,7 +192,7 @@ func TestCsvConvert(t *testing.T) {
 			"test2": 123.45,
 		},
 		RawData: []byte("test,test2\n1,123.45\n"),
-	})
+	}, 1234)
 
 	fileExists, _ := afero.Exists(fs, "/var/www/simracing-telemetry/test.csv")
 	assert.True(t, fileExists)

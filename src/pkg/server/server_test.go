@@ -16,7 +16,7 @@ func init() {
 	udp := NewServer(udpPort)
 
 	go func() {
-		udp.Run(func(buffer []byte) {})
+		udp.Run(func([]byte, int) {}, 1234)
 	}()
 }
 

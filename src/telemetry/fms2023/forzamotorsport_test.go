@@ -42,7 +42,7 @@ func TestProcessBuffer(t *testing.T) {
 	scanner := bufio.NewScanner(file)
 	for scanner.Scan() {
 		lineDecode, _ := base64.StdEncoding.DecodeString(scanner.Text())
-		assert.NotPanics(t, func() { fm.processBuffer(lineDecode) })
+		assert.NotPanics(t, func() { fm.processBuffer(lineDecode, 1234) })
 	}
 
 	if err := scanner.Err(); err != nil {

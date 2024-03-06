@@ -28,6 +28,11 @@ var lastValueCache map[int]hashCache
 
 // Convert converts the data to the MySQL database
 func (db *MysqlBestLapConverter) Convert(_ time.Time, data telemetry.GameData, port int) {
+	isBestLap, cacheHash := db.bestLapExists(port, data.Data["BestLap"], data.Data["TrackOrdinal"], data.Data["CarOrdinal"])
+	if data.Data["BestLap"] == 0 || isBestLap {
+		return
+	}
+
 	if db.connector == nil {
 		fmt.Println("Reconnecting to MySQL BL...")
 		var err error
@@ -36,10 +41,9 @@ func (db *MysqlBestLapConverter) Convert(_ time.Time, data telemetry.GameData, p
 			log.Println(err)
 			return
 		}
-	}
-
-	if data.Data["BestLap"] == 0 || db.bestLapExists(port, data.Data["BestLap"], data.Data["TrackOrdinal"], data.Data["CarOrdinal"]) {
-		return
+		db.connector.SetConnMaxLifetime(time.Minute * 5)
+		db.connector.SetMaxOpenConns(10)
+		db.connector.SetMaxIdleConns(10)
 	}
 
 	myData := dbData{
@@ -79,22 +83,14 @@ func (db *MysqlBestLapConverter) Convert(_ time.Time, data telemetry.GameData, p
 		log.Println(err)
 		return
 	}
+	lastValueCache[port] = cacheHash
 }
 
 func (db *MysqlBestLapConverter) getHashCacheString(bestLap, trackOrdinal, carOrdinal float32) hashCache {
 	return hashCache(fmt.Sprintf("%f-%f-%f", bestLap, trackOrdinal, carOrdinal))
 }
 
-func (db *MysqlBestLapConverter) bestLapExists(port int, bestLap, trackOrdinal, carOrdinal float32) bool {
-	if lastValueCache == nil {
-		lastValueCache = make(map[int]hashCache)
-	}
-
+func (db *MysqlBestLapConverter) bestLapExists(port int, bestLap, trackOrdinal, carOrdinal float32) (bool, hashCache) {
 	hash := db.getHashCacheString(bestLap, trackOrdinal, carOrdinal)
-	if lastValueCache[port] == hash {
-		return true
-	}
-
-	lastValueCache[port] = hash
-	return false
+	return lastValueCache[port] == hash, hash
 }
