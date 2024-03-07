@@ -1,0 +1,1 @@
+ALTER TABLE tmd_forzamotorsport2023_bestlaps ADD CONSTRAINT tmd_forzamotorsport2023_bestlaps_UN UNIQUE KEY (CarOrdinal,CarPerformanceIndex,BestLap,TrackOrdinal,user_id);

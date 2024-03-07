@@ -3,6 +3,7 @@ package converter
 import (
 	"database/sql"
 	"fmt"
+	"github.com/go-sql-driver/mysql"
 	"log"
 	"time"
 
@@ -106,11 +107,17 @@ func (db *MysqlBestLapConverter) Convert(_ time.Time, data telemetry.GameData, p
 	}
 
 	_, err = db.connector.Exec(query, args...)
+	if mysqlError, ok := err.(*mysql.MySQLError); ok {
+		if mysqlError.Number == 1062 {
+			// unique key. Skipping the insert and update the cache
+			lastValueCache[port] = cacheHash
+			return
+		}
+	}
 	if err != nil {
 		log.Println(err)
 		return
 	}
-	lastValueCache[port] = cacheHash
 }
 
 func (db *MysqlBestLapConverter) getHashCacheString(bestLap, trackOrdinal, carOrdinal float32) hashCache {
