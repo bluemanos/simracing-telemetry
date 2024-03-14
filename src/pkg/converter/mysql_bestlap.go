@@ -3,20 +3,22 @@ package converter
 import (
 	"database/sql"
 	"fmt"
-	"github.com/go-sql-driver/mysql"
 	"log"
 	"time"
 
 	sq "github.com/Masterminds/squirrel"
 	"github.com/bluemanos/simracing-telemetry/src/pkg/enums"
 	"github.com/bluemanos/simracing-telemetry/src/telemetry"
+	"github.com/go-sql-driver/mysql"
 	_ "github.com/go-sql-driver/mysql"
+	"github.com/jmoiron/sqlx"
+	"github.com/pkg/errors"
 )
 
 type MysqlBestLapConverter struct {
 	ConverterData
 	User, Password, Host, Port, Database, TableName string
-	connector                                       *sql.DB
+	connector                                       *sqlx.DB
 }
 
 type dbData struct {
@@ -24,15 +26,31 @@ type dbData struct {
 	Values []string
 }
 
+type BestLapEntity struct {
+	ID                  int64     `db:"id"`
+	UserID              int64     `db:"user_id"`
+	CarOrdinal          int       `db:"CarOrdinal"`
+	TrackOrdinal        int       `db:"TrackOrdinal"`
+	BestLap             float32   `db:"BestLap"`
+	Fuel                float32   `db:"Fuel"`
+	CarClass            int       `db:"CarClass"`
+	DrivetrainType      int       `db:"DrivetrainType"`
+	CarPerformanceIndex int       `db:"CarPerformanceIndex"`
+	NumCylinders        int       `db:"NumCylinders"`
+	LapNumber           int       `db:"LapNumber"`
+	RacePosition        int       `db:"RacePosition"`
+	CreatedAt           time.Time `db:"created_at"`
+}
+
 type hashCache string
 
-var lastValueCache map[int]hashCache
+var lastValueCache map[int]map[hashCache]*float32
 
 func NewMysqlBestLapConverter(game enums.Game, adapterConfiguration []string) (*MysqlBestLapConverter, error) {
 	if len(adapterConfiguration) != 6 {
 		return nil, ErrInvalidMySQLAdapterConfiguration
 	}
-	lastValueCache = make(map[int]hashCache)
+	lastValueCache = make(map[int]map[hashCache]*float32)
 
 	return &MysqlBestLapConverter{
 		ConverterData: ConverterData{GameName: game},
@@ -47,20 +65,10 @@ func NewMysqlBestLapConverter(game enums.Game, adapterConfiguration []string) (*
 
 // Convert converts the data to the MySQL database
 func (db *MysqlBestLapConverter) Convert(_ time.Time, data telemetry.GameData, port int) {
-	isBestLap, cacheHash := db.bestLapExists(
-		port,
-		data.Data["BestLap"],
-		data.Data["TrackOrdinal"],
-		data.Data["CarOrdinal"],
-	)
-	if data.Data["BestLap"] == 0 || isBestLap {
-		return
-	}
-
 	if db.connector == nil {
 		fmt.Println("Reconnecting to MySQL BL...")
 		var err error
-		db.connector, err = sql.Open(
+		db.connector, err = sqlx.Open(
 			"mysql",
 			fmt.Sprintf("%s:%s@tcp(%s:%s)/%s", db.User, db.Password, db.Host, db.Port, db.Database),
 		)
@@ -72,6 +80,16 @@ func (db *MysqlBestLapConverter) Convert(_ time.Time, data telemetry.GameData, p
 		db.connector.SetMaxOpenConns(10)
 		db.connector.SetMaxIdleConns(10)
 		fmt.Println("Reconnecting to MySQL BL... Connected")
+	}
+
+	isBestLap, cacheHash := db.bestLapExists(
+		port,
+		data.Data["BestLap"],
+		data.Data["TrackOrdinal"],
+		data.Data["CarOrdinal"],
+	)
+	if data.Data["BestLap"] == 0 || !isBestLap {
+		return
 	}
 
 	myData := dbData{
@@ -107,10 +125,12 @@ func (db *MysqlBestLapConverter) Convert(_ time.Time, data telemetry.GameData, p
 	}
 
 	_, err = db.connector.Exec(query, args...)
-	if mysqlError, ok := err.(*mysql.MySQLError); ok {
+	var mysqlError *mysql.MySQLError
+	if errors.As(err, &mysqlError) {
 		if mysqlError.Number == 1062 {
 			// unique key. Skipping the insert and update the cache
-			lastValueCache[port] = cacheHash
+			currentBestLap := data.Data["BestLap"]
+			lastValueCache[port][cacheHash] = &currentBestLap
 			return
 		}
 	}
@@ -118,6 +138,9 @@ func (db *MysqlBestLapConverter) Convert(_ time.Time, data telemetry.GameData, p
 		log.Println(err)
 		return
 	}
+
+	currentBestLap := data.Data["BestLap"]
+	lastValueCache[port][cacheHash] = &currentBestLap
 }
 
 func (db *MysqlBestLapConverter) getHashCacheString(bestLap, trackOrdinal, carOrdinal float32) hashCache {
@@ -126,5 +149,40 @@ func (db *MysqlBestLapConverter) getHashCacheString(bestLap, trackOrdinal, carOr
 
 func (db *MysqlBestLapConverter) bestLapExists(port int, bestLap, trackOrdinal, carOrdinal float32) (bool, hashCache) {
 	hash := db.getHashCacheString(bestLap, trackOrdinal, carOrdinal)
-	return lastValueCache[port] == hash, hash
+
+	if lastValueCache[port] == nil {
+		lastValueCache[port] = make(map[hashCache]*float32)
+	}
+
+	if lastValueCache[port][hash] == nil {
+		queryInsertBuilder := sq.Select([]string{"id", "BestLap"}...).
+			From("tmd_forzamotorsport2023_bestlaps").
+			Where(sq.Eq{
+				"TrackOrdinal": trackOrdinal,
+				"CarOrdinal":   carOrdinal,
+				"user_id":      "1",
+			}).
+			OrderBy("BestLap ASC").
+			Limit(1)
+
+		query, args, err := queryInsertBuilder.ToSql()
+		if err != nil {
+			log.Println(err)
+			return false, hash
+		}
+
+		bestLapDb := BestLapEntity{}
+		err = db.connector.Get(&bestLapDb, query, args...)
+		if err != nil {
+			if errors.Is(err, sql.ErrNoRows) {
+				noBestLap := float32(0)
+				lastValueCache[port][hash] = &noBestLap
+			}
+			return true, hash
+		}
+
+		lastValueCache[port][hash] = &bestLapDb.BestLap
+	}
+
+	return *lastValueCache[port][hash] > bestLap, hash
 }
