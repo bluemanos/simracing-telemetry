@@ -13,7 +13,10 @@ import (
 	_ "github.com/go-sql-driver/mysql"
 	"github.com/jmoiron/sqlx"
 	"github.com/pkg/errors"
+	"golang.org/x/sync/semaphore"
 )
+
+var sem = semaphore.NewWeighted(1)
 
 type MysqlBestLapConverter struct {
 	ConverterData
@@ -88,9 +91,12 @@ func (db *MysqlBestLapConverter) Convert(_ time.Time, data telemetry.GameData, p
 		data.Data["TrackOrdinal"],
 		data.Data["CarOrdinal"],
 	)
-	if data.Data["BestLap"] == 0 || !isBestLap {
+	if data.Data["BestLap"] == 0 ||
+		!isBestLap ||
+		!sem.TryAcquire(1) {
 		return
 	}
+	defer sem.Release(1)
 
 	myData := dbData{
 		Keys: []string{
@@ -123,6 +129,8 @@ func (db *MysqlBestLapConverter) Convert(_ time.Time, data telemetry.GameData, p
 		log.Println(err)
 		return
 	}
+	fmt.Printf("%+v\n", query)
+	fmt.Printf("%+v\n", args)
 
 	_, err = db.connector.Exec(query, args...)
 	var mysqlError *mysql.MySQLError
@@ -170,6 +178,8 @@ func (db *MysqlBestLapConverter) bestLapExists(port int, bestLap, trackOrdinal, 
 			log.Println(err)
 			return false, hash
 		}
+		fmt.Printf("%+v\n", query)
+		fmt.Printf("%+v\n", args)
 
 		bestLapDb := BestLapEntity{}
 		err = db.connector.Get(&bestLapDb, query, args...)
