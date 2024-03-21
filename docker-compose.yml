@@ -9,7 +9,6 @@ services:
       - ${TMD_FORZAM:-9999}:9999/udp
     volumes:
       - ./:/app
-    entrypoint: CompileDaemon -build="go build -o simracing-telemetry" -command="./simracing-telemetry"
 
   db:
     image: mariadb:10.5.8

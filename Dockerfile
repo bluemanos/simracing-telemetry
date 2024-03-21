@@ -1,23 +1,11 @@
 # Go Version
-FROM golang:1.21
+FROM golang:1.21-alpine
 
-# Environment variables which CompileDaemon requires to run
-ENV PROJECT_DIR=/app \
-    GO111MODULE=on \
-    CGO_ENABLED=0
-
-ENV FULL_COMMAND="./simracing-telemetry "
-ENV ASDAD=${FULL_COMMAND}${COMMAND_ARGS}
-
-# Basic setup of the container
-RUN mkdir /app
-COPY .. /app
 WORKDIR /app
 
-# Get CompileDaemon
-RUN go get github.com/githubnemo/CompileDaemon
-RUN go install github.com/githubnemo/CompileDaemon
+RUN go install github.com/cosmtrek/air@v1.49.0
 
-# The build flag sets how to build after a change has been detected in the source code
-# The command flag sets how to run the app after it has been built
-ENTRYPOINT CompileDaemon -build="go build -o simracing-telemetry" -command="./simracing-telemetry"
+COPY go.mod go.sum ./
+RUN go mod download
+
+CMD ["air", "-c", ".air.toml"]
