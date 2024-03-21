@@ -16,8 +16,10 @@ import (
 	"golang.org/x/sync/semaphore"
 )
 
-var semInsert = semaphore.NewWeighted(1)
-var semSelect = semaphore.NewWeighted(1)
+var (
+	semInsert = semaphore.NewWeighted(1)
+	semSelect = semaphore.NewWeighted(1)
+)
 
 type MysqlBestLapConverter struct {
 	ConverterData
@@ -92,16 +94,13 @@ func (db *MysqlBestLapConverter) Convert(_ time.Time, data telemetry.GameData, p
 		data.Data["TrackOrdinal"],
 		data.Data["CarOrdinal"],
 	)
-	if data.Data["BestLap"] == 0 ||
-		!isBestLap {
+	if data.Data["BestLap"] == 0 || !isBestLap {
 		return
 	}
 	if !semInsert.TryAcquire(1) {
-		//log.Println("Semaphore insert is locked")
 		return
 	}
 	defer semInsert.Release(1)
-	//log.Println("Semaphore insert locking")
 
 	myData := dbData{
 		Keys: []string{
@@ -134,8 +133,6 @@ func (db *MysqlBestLapConverter) Convert(_ time.Time, data telemetry.GameData, p
 		log.Println(err)
 		return
 	}
-	fmt.Printf("%+v\n", query)
-	fmt.Printf("%+v\n", args)
 
 	_, err = db.connector.Exec(query, args...)
 	var mysqlError *mysql.MySQLError
@@ -173,11 +170,9 @@ func (db *MysqlBestLapConverter) bestLapExists(port int, bestLap, trackOrdinal, 
 
 	if lastValueCache[port][hash] == nil {
 		if !semSelect.TryAcquire(1) {
-			log.Println("Semaphore select is locked")
 			return false, hash
 		}
 		defer semSelect.Release(1)
-		log.Println("Semaphore select locking")
 
 		queryInsertBuilder := sq.Select([]string{"id", "BestLap"}...).
 			From("tmd_forzamotorsport2023_bestlaps").
@@ -194,16 +189,14 @@ func (db *MysqlBestLapConverter) bestLapExists(port int, bestLap, trackOrdinal, 
 			log.Println(err)
 			return false, hash
 		}
-		fmt.Printf("%+v\n", query)
-		fmt.Printf("%+v\n", args)
 
 		bestLapDb := BestLapEntity{}
 		err = db.connector.Get(&bestLapDb, query, args...)
+		if errors.Is(err, sql.ErrNoRows) {
+			noBestLap := float32(0)
+			lastValueCache[port][hash] = &noBestLap
+		}
 		if err != nil {
-			if errors.Is(err, sql.ErrNoRows) {
-				noBestLap := float32(0)
-				lastValueCache[port][hash] = &noBestLap
-			}
 			return true, hash
 		}
 
