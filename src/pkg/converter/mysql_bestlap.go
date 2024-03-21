@@ -16,7 +16,8 @@ import (
 	"golang.org/x/sync/semaphore"
 )
 
-var sem = semaphore.NewWeighted(1)
+var semInsert = semaphore.NewWeighted(1)
+var semSelect = semaphore.NewWeighted(1)
 
 type MysqlBestLapConverter struct {
 	ConverterData
@@ -92,11 +93,15 @@ func (db *MysqlBestLapConverter) Convert(_ time.Time, data telemetry.GameData, p
 		data.Data["CarOrdinal"],
 	)
 	if data.Data["BestLap"] == 0 ||
-		!isBestLap ||
-		!sem.TryAcquire(1) {
+		!isBestLap {
 		return
 	}
-	defer sem.Release(1)
+	if !semInsert.TryAcquire(1) {
+		//log.Println("Semaphore insert is locked")
+		return
+	}
+	defer semInsert.Release(1)
+	//log.Println("Semaphore insert locking")
 
 	myData := dbData{
 		Keys: []string{
@@ -158,11 +163,22 @@ func (db *MysqlBestLapConverter) getHashCacheString(bestLap, trackOrdinal, carOr
 func (db *MysqlBestLapConverter) bestLapExists(port int, bestLap, trackOrdinal, carOrdinal float32) (bool, hashCache) {
 	hash := db.getHashCacheString(bestLap, trackOrdinal, carOrdinal)
 
+	if bestLap == 0 {
+		return false, hash
+	}
+
 	if lastValueCache[port] == nil {
 		lastValueCache[port] = make(map[hashCache]*float32)
 	}
 
 	if lastValueCache[port][hash] == nil {
+		if !semSelect.TryAcquire(1) {
+			log.Println("Semaphore select is locked")
+			return false, hash
+		}
+		defer semSelect.Release(1)
+		log.Println("Semaphore select locking")
+
 		queryInsertBuilder := sq.Select([]string{"id", "BestLap"}...).
 			From("tmd_forzamotorsport2023_bestlaps").
 			Where(sq.Eq{
