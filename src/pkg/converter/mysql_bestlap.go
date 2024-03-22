@@ -107,7 +107,6 @@ func (db *MysqlBestLapConverter) Convert(_ time.Time, data telemetry.GameData, p
 	if data.Data["BestLap"] == 0 || !isBestLap {
 		return
 	}
-	
 	if !semInsert.TryAcquire(1) {
 		return
 	}
