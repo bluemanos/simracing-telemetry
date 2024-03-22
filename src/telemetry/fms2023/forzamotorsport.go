@@ -116,14 +116,9 @@ func (fm *ForzaMotorsportHandler) ProcessBuffer(buffer []byte, port int) {
 		tempTelemetry[i] = value
 	}
 
-	//telemetry.DisplayLog("vvv", fmt.Sprintf(
-	//	"IsRace: %.0f \t RPM: %.0f \t Gear: %.0f \t BHP: %.0f \t Speed: %.0f",
-	//	tempTelemetry["IsRaceOn"],
-	//	tempTelemetry["CurrentEngineRpm"],
-	//	tempTelemetry["Gear"],
-	//	math.Max(0.0, float64(tempTelemetry["Power"]/745.699872)),
-	//	tempTelemetry["Speed"]*3.6, // 3.6 for kph, 2.237 for mph
-	//))
+	if tempTelemetry["IsRaceOn"] == 0 {
+		return
+	}
 
 	data := telemetry.GameData{
 		Keys:    fm.Keys,
