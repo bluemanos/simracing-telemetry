@@ -13,6 +13,7 @@ type GameData struct {
 }
 
 type ConverterInterface interface {
+	ChannelInit(now time.Time, channel chan GameData, port int)
 	Convert(now time.Time, data GameData, port int)
 }
 
