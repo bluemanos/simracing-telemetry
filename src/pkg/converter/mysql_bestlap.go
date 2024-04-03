@@ -69,6 +69,16 @@ func NewMysqlBestLapConverter(game enums.Game, adapterConfiguration []string) (*
 	}, nil
 }
 
+func (db *MysqlBestLapConverter) ChannelInit(now time.Time, channel chan telemetry.GameData, port int) {
+	fmt.Println("MysqlBestLapConverter ChannelInit")
+	for {
+		select {
+		case data := <-channel:
+			db.Convert(now, data, port)
+		}
+	}
+}
+
 // Convert converts the data to the MySQL database
 func (db *MysqlBestLapConverter) Convert(_ time.Time, data telemetry.GameData, port int) {
 	if db.connector == nil {
@@ -133,6 +143,8 @@ func (db *MysqlBestLapConverter) Convert(_ time.Time, data telemetry.GameData, p
 		log.Println(err)
 		return
 	}
+	telemetry.DisplayLog("vvv", query)
+	telemetry.DisplayLog("vvv", args)
 
 	_, err = db.connector.Exec(query, args...)
 	var mysqlError *mysql.MySQLError
@@ -189,6 +201,8 @@ func (db *MysqlBestLapConverter) bestLapExists(port int, bestLap, trackOrdinal, 
 			log.Println(err)
 			return false, hash
 		}
+		telemetry.DisplayLog("vvv", query)
+		telemetry.DisplayLog("vvv", args)
 
 		bestLapDb := BestLapEntity{}
 		err = db.connector.Get(&bestLapDb, query, args...)

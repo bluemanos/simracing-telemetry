@@ -1,6 +1,7 @@
 package converter
 
 import (
+	"fmt"
 	"log"
 	"net"
 	"strconv"
@@ -53,6 +54,16 @@ func NewUdpForwarder(game enums.Game, adapterConfiguration []string) (*UdpForwar
 		ConverterData: ConverterData{GameName: game},
 		Clients:       udpClientsList,
 	}, nil
+}
+
+func (udp *UdpForwarder) ChannelInit(now time.Time, channel chan telemetry.GameData, port int) {
+	fmt.Println("UdpForwarder ChannelInit")
+	for {
+		select {
+		case data := <-channel:
+			udp.Convert(now, data, port)
+		}
+	}
 }
 
 // Convert converts the data to the UDP clients

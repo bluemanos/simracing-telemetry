@@ -9,7 +9,6 @@ import (
 	"github.com/bluemanos/simracing-telemetry/src/pkg/enums"
 	"github.com/bluemanos/simracing-telemetry/src/telemetry"
 	_ "github.com/go-sql-driver/mysql"
-	"github.com/spf13/afero"
 )
 
 var gameEnvKeys = map[enums.Game]gameConfiguration{
@@ -25,6 +24,7 @@ type gameConfiguration struct {
 }
 
 type ConverterInterface interface {
+	ChannelInit(now time.Time, channel chan telemetry.GameData, port int)
 	Convert(now time.Time, data telemetry.GameData, port int)
 }
 
@@ -41,22 +41,22 @@ func SetupAdapter(game enums.Game) []telemetry.ConverterInterface {
 	for _, adapter := range adapters {
 		adapterConfiguration := strings.Split(adapter, ":")
 		switch adapterConfiguration[0] {
-		case "csv":
-			config, err := NewCsvConverter(game, adapterConfiguration, afero.NewOsFs())
-			if err != nil {
-				log.Println(err)
-				continue
-			}
-			converters = append(converters, config)
-			log.Printf("[%s] CSV adapter configured", game)
-		case "mysql":
-			config, err := NewMySQLConverter(game, adapterConfiguration)
-			if err != nil {
-				log.Println(err)
-				continue
-			}
-			converters = append(converters, config)
-			log.Printf("[%s] MySQL adapter configured", game)
+		//case "csv":
+		//	config, err := NewCsvConverter(game, adapterConfiguration, afero.NewOsFs())
+		//	if err != nil {
+		//		log.Println(err)
+		//		continue
+		//	}
+		//	converters = append(converters, config)
+		//	log.Printf("[%s] CSV adapter configured", game)
+		//case "mysql":
+		//	config, err := NewMySQLConverter(game, adapterConfiguration)
+		//	if err != nil {
+		//		log.Println(err)
+		//		continue
+		//	}
+		//	converters = append(converters, config)
+		//	log.Printf("[%s] MySQL adapter configured", game)
 		case "mysql_bl":
 			config, err := NewMysqlBestLapConverter(game, adapterConfiguration)
 			if err != nil {

@@ -2,16 +2,16 @@ package fms2023
 
 import (
 	"encoding/binary"
+	"fmt"
+	"github.com/bluemanos/simracing-telemetry/src/pkg/converter"
+	"github.com/bluemanos/simracing-telemetry/src/pkg/enums"
+	"github.com/bluemanos/simracing-telemetry/src/pkg/server"
+	"github.com/bluemanos/simracing-telemetry/src/telemetry"
 	"log"
 	"math"
 	"strconv"
 	"strings"
 	"time"
-
-	"github.com/bluemanos/simracing-telemetry/src/pkg/converter"
-	"github.com/bluemanos/simracing-telemetry/src/pkg/enums"
-	"github.com/bluemanos/simracing-telemetry/src/pkg/server"
-	"github.com/bluemanos/simracing-telemetry/src/telemetry"
 )
 
 const DataFormatFile = "forzamotorsport"
@@ -20,6 +20,8 @@ type ForzaMotorsportHandler struct {
 	telemetry.TelemetryHandler
 	DebugMode string
 }
+
+var gameTelemetryData = make(chan telemetry.GameData)
 
 // NewForzaMotorsportHandler creates a new ForzaMotorsportHandler
 func NewForzaMotorsportHandler(debugMode string) *ForzaMotorsportHandler {
@@ -40,7 +42,8 @@ func (fm *ForzaMotorsportHandler) InitAndRun(port int) error {
 
 	log.Printf("Forza data out server listening on %s:%d, waiting for Forza data...\n", telemetry.GetOutboundIP(), port)
 
-	err := udpServer.Run(fm.ProcessBuffer, port)
+	err := udpServer.Run(fm.ProcessChannel, port)
+	defer udpServer.Close()
 	if err != nil {
 		return err
 	}
@@ -92,6 +95,20 @@ func (fm *ForzaMotorsportHandler) InitTelemetry() (map[string]telemetry.Telemetr
 	return telemetryArray, telemetryKeys
 }
 
+func (fm *ForzaMotorsportHandler) ProcessChannel(channel chan []byte, port int) {
+	fmt.Println("ForzaMotorsportHandler ProcessChannel")
+	for _, adapter := range fm.Adapters {
+		go adapter.ChannelInit(time.Now(), gameTelemetryData, port)
+	}
+
+	for {
+		select {
+		case data := <-channel:
+			fm.ProcessBuffer(data, port)
+		}
+	}
+}
+
 // ProcessBuffer processes the received data
 func (fm *ForzaMotorsportHandler) ProcessBuffer(buffer []byte, port int) {
 	tempTelemetry := make(map[string]float32, len(fm.Telemetries))
@@ -116,22 +133,18 @@ func (fm *ForzaMotorsportHandler) ProcessBuffer(buffer []byte, port int) {
 		tempTelemetry[i] = value
 	}
 
-	//telemetry.DisplayLog("vvv", fmt.Sprintf(
-	//	"IsRace: %.0f \t RPM: %.0f \t Gear: %.0f \t BHP: %.0f \t Speed: %.0f",
-	//	tempTelemetry["IsRaceOn"],
-	//	tempTelemetry["CurrentEngineRpm"],
-	//	tempTelemetry["Gear"],
-	//	math.Max(0.0, float64(tempTelemetry["Power"]/745.699872)),
-	//	tempTelemetry["Speed"]*3.6, // 3.6 for kph, 2.237 for mph
-	//))
+	if tempTelemetry["IsRaceOn"] == 0 {
+		return
+	}
 
 	data := telemetry.GameData{
 		Keys:    fm.Keys,
 		Data:    tempTelemetry,
 		RawData: buffer,
 	}
+	gameTelemetryData <- data
 
-	for _, adapter := range fm.Adapters {
-		go adapter.Convert(time.Now(), data, port)
-	}
+	//for _, adapter := range fm.Adapters {
+	//	go adapter.Convert(time.Now(), data, port)
+	//}
 }

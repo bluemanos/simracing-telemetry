@@ -2,6 +2,7 @@ package server
 
 import (
 	"errors"
+	"fmt"
 	"log"
 	"net"
 )
@@ -10,6 +11,8 @@ type UDPServer struct {
 	Addr   string
 	server *net.UDPConn
 }
+
+var udpBuffer = make(chan []byte)
 
 // Run starts the UDP server.
 func (u *UDPServer) Run(fn HandleConnection, port int) (err error) {
@@ -23,6 +26,9 @@ func (u *UDPServer) Run(fn HandleConnection, port int) (err error) {
 		return errors.New("could not listen on UDP")
 	}
 
+	fmt.Println("UPD fn goroutine")
+	go fn(udpBuffer, port)
+
 	for {
 		buf := make([]byte, 2048)
 		n, conn, err := u.server.ReadFromUDP(buf)
@@ -35,7 +41,8 @@ func (u *UDPServer) Run(fn HandleConnection, port int) (err error) {
 			continue
 		}
 
-		go fn(buf[:n], port)
+		//go fn(buf[:n], port)
+		udpBuffer <- buf[:n]
 	}
 	return nil
 }
