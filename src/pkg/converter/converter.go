@@ -65,14 +65,14 @@ func SetupAdapter(game enums.Game) []telemetry.ConverterInterface {
 			}
 			converters = append(converters, config)
 			log.Printf("[%s] MySQL BL adapter configured", game)
-			//case "udp":
-			//	config, err := NewUdpForwarder(game, adapterConfiguration)
-			//	if err != nil {
-			//		log.Println(err)
-			//		continue
-			//	}
-			//	converters = append(converters, config)
-			//	log.Printf("[%s] UDP adapter configured", game)
+		case "udp":
+			config, err := NewUdpForwarder(game, adapterConfiguration)
+			if err != nil {
+				log.Println(err)
+				continue
+			}
+			converters = append(converters, config)
+			log.Printf("[%s] UDP adapter configured", game)
 		}
 	}
 	return converters

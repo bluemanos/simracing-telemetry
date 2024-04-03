@@ -36,7 +36,7 @@ type TelemetryData struct {
 }
 
 // DisplayLog Check if flag was passed
-func DisplayLog(flagName string, logText string) {
+func DisplayLog(flagName string, logText any) {
 	if os.Getenv("DEBUG_MODE") == flagName {
 		fmt.Println(logText)
 	}

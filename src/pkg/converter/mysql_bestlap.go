@@ -143,6 +143,8 @@ func (db *MysqlBestLapConverter) Convert(_ time.Time, data telemetry.GameData, p
 		log.Println(err)
 		return
 	}
+	telemetry.DisplayLog("vvv", query)
+	telemetry.DisplayLog("vvv", args)
 
 	_, err = db.connector.Exec(query, args...)
 	var mysqlError *mysql.MySQLError
@@ -199,6 +201,8 @@ func (db *MysqlBestLapConverter) bestLapExists(port int, bestLap, trackOrdinal, 
 			log.Println(err)
 			return false, hash
 		}
+		telemetry.DisplayLog("vvv", query)
+		telemetry.DisplayLog("vvv", args)
 
 		bestLapDb := BestLapEntity{}
 		err = db.connector.Get(&bestLapDb, query, args...)
