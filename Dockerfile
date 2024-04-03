@@ -1,6 +1,9 @@
 # Go Version
 FROM golang:1.22
 
+ENV GO111MODULE=on \
+    GOFLAGS=-buildvcs=false
+
 WORKDIR /app
 
 RUN go install github.com/cosmtrek/air@v1.51.0
