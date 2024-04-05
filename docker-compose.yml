@@ -6,7 +6,7 @@ services:
       context: .
       dockerfile: Dockerfile
     ports:
-      - ${TMD_FORZAM:-9999}:9999/udp
+      - ${TMD_FORZAM:-9999}:${TMD_FORZAM:-9999}/udp
     volumes:
       - ./:/app
 
