@@ -12,7 +12,7 @@ func TestUdpServer(t *testing.T) {
 			Addr: "invalid",
 		}
 
-		err := udpServer.Run(func([]byte, int) {}, 1234)
+		err := udpServer.Run(func(chan []byte, int) {}, 1234)
 
 		if err == nil {
 			t.Errorf("Run() error = %v, wantErr %v", err, true)
@@ -25,7 +25,7 @@ func TestUdpServer(t *testing.T) {
 		}
 
 		go func() {
-			err := udpServer.Run(func([]byte, int) {}, 1234)
+			err := udpServer.Run(func(chan []byte, int) {}, 1234)
 			defer udpServer.Close()
 
 			if err != nil {

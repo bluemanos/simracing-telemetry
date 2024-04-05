@@ -41,7 +41,6 @@ func (u *UDPServer) Run(fn HandleConnection, port int) (err error) {
 			continue
 		}
 
-		//go fn(buf[:n], port)
 		udpBuffer <- buf[:n]
 	}
 	return nil

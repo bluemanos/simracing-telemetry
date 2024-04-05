@@ -58,6 +58,7 @@ func NewUdpForwarder(game enums.Game, adapterConfiguration []string) (*UdpForwar
 
 func (udp *UdpForwarder) ChannelInit(now time.Time, channel chan telemetry.GameData, port int) {
 	fmt.Println("UdpForwarder ChannelInit")
+	//nolint:gosimple // loop is needed to keep the channel open
 	for {
 		select {
 		case data := <-channel:

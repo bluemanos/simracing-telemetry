@@ -1,6 +1,7 @@
 package main
 
 import (
+	"fmt"
 	"log"
 	"os"
 	"strconv"
@@ -23,6 +24,7 @@ func main() {
 	defer sentry.Flush(2 * time.Second)
 
 	debugMode := os.Getenv("DEBUG_MODE")
+	fmt.Printf("USER_ID:%+v\n", os.Getenv("USER_ID"))
 
 	fm := fms2023.NewForzaMotorsportHandler(debugMode)
 

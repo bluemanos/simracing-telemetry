@@ -1,11 +1,11 @@
 package server_test
 
 import (
-	"errors"
 	"net"
 	"testing"
 	"time"
 
+	"github.com/pkg/errors"
 	"github.com/stretchr/testify/assert"
 )
 

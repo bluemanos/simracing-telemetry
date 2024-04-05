@@ -4,6 +4,7 @@ import (
 	"database/sql"
 	"fmt"
 	"log"
+	"os"
 	"time"
 
 	sq "github.com/Masterminds/squirrel"
@@ -25,6 +26,7 @@ type MysqlBestLapConverter struct {
 	ConverterData
 	User, Password, Host, Port, Database, TableName string
 	connector                                       *sqlx.DB
+	userId                                          string
 }
 
 type dbData struct {
@@ -66,11 +68,13 @@ func NewMysqlBestLapConverter(game enums.Game, adapterConfiguration []string) (*
 		Port:          adapterConfiguration[4],
 		Database:      adapterConfiguration[5],
 		TableName:     "tmd_forzamotorsport2023_bestlaps",
+		userId:        os.Getenv("USER_ID"),
 	}, nil
 }
 
 func (db *MysqlBestLapConverter) ChannelInit(now time.Time, channel chan telemetry.GameData, port int) {
 	fmt.Println("MysqlBestLapConverter ChannelInit")
+	//nolint:gosimple // loop is needed to keep the channel open
 	for {
 		select {
 		case data := <-channel:
@@ -128,7 +132,7 @@ func (db *MysqlBestLapConverter) Convert(_ time.Time, data telemetry.GameData, p
 			fmt.Sprintf("%f", data.Data["LapNumber"]),
 			fmt.Sprintf("%f", data.Data["RacePosition"]),
 			fmt.Sprintf("%f", data.Data["TrackOrdinal"]),
-			"1",
+			db.userId,
 		},
 	}
 
@@ -165,12 +169,15 @@ func (db *MysqlBestLapConverter) Convert(_ time.Time, data telemetry.GameData, p
 	lastValueCache[port][cacheHash] = &currentBestLap
 }
 
-func (db *MysqlBestLapConverter) getHashCacheString(bestLap, trackOrdinal, carOrdinal float32) hashCache {
-	return hashCache(fmt.Sprintf("%f-%f-%f", bestLap, trackOrdinal, carOrdinal))
+func (db *MysqlBestLapConverter) getHashCacheString(
+	userID string,
+	bestLap, trackOrdinal, carOrdinal float32,
+) hashCache {
+	return hashCache(fmt.Sprintf("%s-%f-%f-%f", userID, bestLap, trackOrdinal, carOrdinal))
 }
 
 func (db *MysqlBestLapConverter) bestLapExists(port int, bestLap, trackOrdinal, carOrdinal float32) (bool, hashCache) {
-	hash := db.getHashCacheString(bestLap, trackOrdinal, carOrdinal)
+	hash := db.getHashCacheString(db.userId, bestLap, trackOrdinal, carOrdinal)
 
 	if bestLap == 0 {
 		return false, hash
@@ -191,7 +198,7 @@ func (db *MysqlBestLapConverter) bestLapExists(port int, bestLap, trackOrdinal, 
 			Where(sq.Eq{
 				"TrackOrdinal": trackOrdinal,
 				"CarOrdinal":   carOrdinal,
-				"user_id":      "1",
+				"user_id":      db.userId,
 			}).
 			OrderBy("BestLap ASC").
 			Limit(1)

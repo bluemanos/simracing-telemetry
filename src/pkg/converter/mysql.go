@@ -37,6 +37,17 @@ func NewMySQLConverter(game enums.Game, adapterConfiguration []string) (*MySQLCo
 	}, nil
 }
 
+func (db *MySQLConverter) ChannelInit(now time.Time, channel chan telemetry.GameData, port int) {
+	fmt.Println("MySQLConverter ChannelInit")
+	//nolint:gosimple // loop is needed to keep the channel open
+	for {
+		select {
+		case data := <-channel:
+			db.Convert(now, data, port)
+		}
+	}
+}
+
 // Convert converts the data to the MySQL database
 func (db *MySQLConverter) Convert(_ time.Time, data telemetry.GameData, _ int) {
 	if data.Data["IsRaceOn"] == 0 {

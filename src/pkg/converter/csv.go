@@ -41,6 +41,17 @@ func NewCsvConverter(game enums.Game, adapterConfiguration []string, fs afero.Fs
 	}, nil
 }
 
+func (csv *CsvConverter) ChannelInit(now time.Time, channel chan telemetry.GameData, port int) {
+	fmt.Println("CsvConverter ChannelInit")
+	//nolint:gosimple // loop is needed to keep the channel open
+	for {
+		select {
+		case data := <-channel:
+			csv.Convert(now, data, port)
+		}
+	}
+}
+
 // Convert the data to CSV format and writes it to the file
 func (csv *CsvConverter) Convert(now time.Time, data telemetry.GameData, _ int) {
 	afs := &afero.Afero{Fs: csv.Fs}

@@ -3,15 +3,16 @@ package fms2023
 import (
 	"encoding/binary"
 	"fmt"
-	"github.com/bluemanos/simracing-telemetry/src/pkg/converter"
-	"github.com/bluemanos/simracing-telemetry/src/pkg/enums"
-	"github.com/bluemanos/simracing-telemetry/src/pkg/server"
-	"github.com/bluemanos/simracing-telemetry/src/telemetry"
 	"log"
 	"math"
 	"strconv"
 	"strings"
 	"time"
+
+	"github.com/bluemanos/simracing-telemetry/src/pkg/converter"
+	"github.com/bluemanos/simracing-telemetry/src/pkg/enums"
+	"github.com/bluemanos/simracing-telemetry/src/pkg/server"
+	"github.com/bluemanos/simracing-telemetry/src/telemetry"
 )
 
 const DataFormatFile = "forzamotorsport"
@@ -35,9 +36,7 @@ func NewForzaMotorsportHandler(debugMode string) *ForzaMotorsportHandler {
 
 // InitAndRun starts the ForzaMotorsportHandler
 func (fm *ForzaMotorsportHandler) InitAndRun(port int) error {
-	udpServer := server.UDPServer{
-		Addr: "0.0.0.0:" + strconv.Itoa(port),
-	}
+	udpServer := server.NewServer("0.0.0.0:" + strconv.Itoa(port))
 	fm.Telemetries, fm.Keys = fm.InitTelemetry()
 
 	log.Printf("Forza data out server listening on %s:%d, waiting for Forza data...\n", telemetry.GetOutboundIP(), port)
@@ -101,6 +100,7 @@ func (fm *ForzaMotorsportHandler) ProcessChannel(channel chan []byte, port int) 
 		go adapter.ChannelInit(time.Now(), gameTelemetryData, port)
 	}
 
+	//nolint:gosimple // loop is needed to keep the channel open
 	for {
 		select {
 		case data := <-channel:
@@ -143,8 +143,4 @@ func (fm *ForzaMotorsportHandler) ProcessBuffer(buffer []byte, port int) {
 		RawData: buffer,
 	}
 	gameTelemetryData <- data
-
-	//for _, adapter := range fm.Adapters {
-	//	go adapter.Convert(time.Now(), data, port)
-	//}
 }
