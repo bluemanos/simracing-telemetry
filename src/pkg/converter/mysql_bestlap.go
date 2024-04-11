@@ -100,13 +100,12 @@ func (db *MysqlBestLapConverter) Convert(_ time.Time, data telemetry.GameData, p
 		fmt.Println("Reconnecting to MySQL BL... Connected")
 	}
 
-	if data.Data["BestLap"] == 0 {
+	if data.Data["LastLap"] == 0 {
 		return
 	}
 
 	isBestLap, cacheHash := db.bestLapExists(
 		port,
-		data.Data["BestLap"],
 		data.Data["TrackOrdinal"],
 		data.Data["LapNumber"],
 	)
@@ -127,7 +126,7 @@ func (db *MysqlBestLapConverter) Convert(_ time.Time, data telemetry.GameData, p
 			fmt.Sprintf("%f", data.Data["DrivetrainType"]),
 			fmt.Sprintf("%f", data.Data["NumCylinders"]),
 			fmt.Sprintf("%f", data.Data["Fuel"]),
-			fmt.Sprintf("%f", data.Data["BestLap"]),
+			fmt.Sprintf("%f", data.Data["LastLap"]),
 			fmt.Sprintf("%f", data.Data["LapNumber"]),
 			fmt.Sprintf("%f", data.Data["RacePosition"]),
 			fmt.Sprintf("%f", data.Data["TrackOrdinal"]),
@@ -173,7 +172,7 @@ func (db *MysqlBestLapConverter) getHashCacheString(
 	return hashCache(fmt.Sprintf("%s-%f-%f", userID, trackOrdinal, lapNumber))
 }
 
-func (db *MysqlBestLapConverter) bestLapExists(port int, bestLap, trackOrdinal, lapNumber float32) (bool, hashCache) {
+func (db *MysqlBestLapConverter) bestLapExists(port int, trackOrdinal, lapNumber float32) (bool, hashCache) {
 	hash := db.getHashCacheString(db.userId, trackOrdinal, lapNumber)
 
 	if lastValueCache[port] == "" || lastValueCache[port] != hash {
