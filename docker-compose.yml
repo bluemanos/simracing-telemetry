@@ -1,10 +1,9 @@
-version: '3.8'
-
 services:
   app:
     build:
       context: .
       dockerfile: Dockerfile
+    restart: unless-stopped
     ports:
       - ${TMD_FORZAM:-9999}:${TMD_FORZAM:-9999}/udp
     volumes:
@@ -22,3 +21,8 @@ services:
     volumes:
         - ./.docker/db/data:/var/lib/mysql
         - ./.docker/db/init:/docker-entrypoint-initdb.d
+
+networks:
+  default:
+    name: simtimes-network
+    external: true
