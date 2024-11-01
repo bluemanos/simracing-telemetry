@@ -16,9 +16,7 @@ import (
 	"golang.org/x/sync/semaphore"
 )
 
-var (
-	semInsert = semaphore.NewWeighted(1)
-)
+var semInsert = semaphore.NewWeighted(1)
 
 type MysqlBestLapConverter struct {
 	ConverterData
