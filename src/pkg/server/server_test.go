@@ -44,7 +44,6 @@ func TestServer_Request(t *testing.T) {
 	}
 
 	for _, tc := range tt {
-		tc := tc
 		t.Run(tc.testName, func(t *testing.T) {
 			t.Parallel()
 			conn, err := net.DialTimeout("udp", udpPort, time.Second)

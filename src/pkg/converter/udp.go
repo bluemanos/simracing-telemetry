@@ -70,7 +70,6 @@ func (udp *UdpForwarder) ChannelInit(now time.Time, channel chan telemetry.GameD
 // Convert converts the data to the UDP clients
 func (udp *UdpForwarder) Convert(_ time.Time, data telemetry.GameData, _ int) {
 	for _, client := range udp.Clients {
-		client := client
 		if client.connection == nil {
 			udp.connectToClient(&client)
 			defer client.connection.Close()
