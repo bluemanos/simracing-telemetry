@@ -1,6 +1,6 @@
 # https://golangci-lint.run/usage/configuration/
 run:
-  skip-dirs:
+  exclude-dirs:
     - vendor
     - bin
     - sdk
@@ -22,6 +22,7 @@ linters:
   enable:
     # read about the linters in this list here: https://golangci-lint.run/usage/linters/
     - bodyclose
+    - copyloopvar
     - depguard
     - dogsled
     - dupl
@@ -29,7 +30,6 @@ linters:
     - errcheck
     - errorlint
     - exhaustive
-    - exportloopref
     - forcetypeassert
     - funlen
     - goconst
