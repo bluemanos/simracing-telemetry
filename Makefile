@@ -30,4 +30,4 @@ init:
 	go mod download
 	go install github.com/segmentio/golines@latest
 	go install golang.org/x/tools/cmd/goimports@latest
-	go install github.com/golangci/golangci-lint/cmd/golangci-lint@v1.61.0
+	go install github.com/golangci/golangci-lint/cmd/golangci-lint@v1.64.8

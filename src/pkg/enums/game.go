@@ -1,8 +1,6 @@
 package enums
 
-const (
-	fms2023 = "fms2023"
-)
+const fms2023 = "fms2023"
 
 type Game string
 

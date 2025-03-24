@@ -1,6 +1,6 @@
 module github.com/bluemanos/simracing-telemetry
 
-go 1.24
+go 1.23
 
 require (
 	github.com/Masterminds/squirrel v1.5.4

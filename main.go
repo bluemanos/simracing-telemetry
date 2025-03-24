@@ -8,7 +8,7 @@ import (
 	"time"
 
 	"github.com/bluemanos/simracing-telemetry/src/telemetry/fms2023"
-	"github.com/getsentry/sentry-go"
+	sentry "github.com/getsentry/sentry-go"
 	_ "github.com/joho/godotenv/autoload"
 )
 

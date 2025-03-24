@@ -93,7 +93,6 @@ func (csv *CsvConverter) Convert(now time.Time, data telemetry.GameData, _ int) 
 		csvLine += fmt.Sprintf(",%v", data.Data[key])
 	}
 	csvLine += "\n"
-	//nolint:govet
 	fmt.Fprint(csv.fileHandler, csvLine[1:])
 }
 
