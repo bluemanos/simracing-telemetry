@@ -14,7 +14,7 @@ func TestInitTelemetries(t *testing.T) {
 	fm := &fms2023.ForzaMotorsportHandler{
 		TelemetryHandler: telemetry.TelemetryHandler{},
 	}
-	fm.Telemetries, fm.Keys = fm.InitTelemetry()
+	fm.Telemetries, fm.Keys = telemetry.Telemetries()
 
 	lines, err := telemetry.ReadLines("fms2023/" + fms2023.DataFormatFile)
 	if err != nil {

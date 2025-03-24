@@ -42,7 +42,7 @@ func DisplayLog(flagName string, logText any) {
 	}
 }
 
-//nolint:lll
+//nolint:lll,funlen
 func Telemetries() (map[string]TelemetryData, []string) {
 	return map[string]TelemetryData{
 			"IsRaceOn":                             {Position: 0, Name: "IsRaceOn", DataType: "S32", StartOffset: 0, EndOffset: 4},
