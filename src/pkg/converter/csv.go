@@ -94,7 +94,7 @@ func (csv *CsvConverter) Convert(now time.Time, data telemetry.GameData, _ int) 
 	}
 	csvLine += "\n"
 	//nolint:govet
-	fmt.Fprintf(csv.fileHandler, csvLine[1:])
+	fmt.Fprint(csv.fileHandler, csvLine[1:])
 }
 
 // CorrectFilePath returns the correct file path based on the retention type
