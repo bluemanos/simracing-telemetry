@@ -17,7 +17,7 @@ var ErrInvalidUDPAdapterConfiguration = errors.New("[UDP] invalid adapter config
 
 type UdpForwarder struct {
 	ConverterData
-	Clients []UdpClient
+	Clients []*UdpClient
 }
 
 type UdpClient struct {
@@ -29,7 +29,7 @@ type UdpClient struct {
 
 func NewUdpForwarder(game enums.Game, adapterConfiguration []string) (*UdpForwarder, error) {
 	udpClients := strings.Split(strings.Join(adapterConfiguration[1:], ":"), "&")
-	var udpClientsList []UdpClient
+	var udpClientsList []*UdpClient
 	for _, udpClient := range udpClients {
 		udpClientConfiguration := strings.Split(udpClient, ":")
 		if len(udpClientConfiguration) != 2 {
@@ -44,7 +44,8 @@ func NewUdpForwarder(game enums.Game, adapterConfiguration []string) (*UdpForwar
 			)
 		}
 
-		udpClientsList = append(udpClientsList, UdpClient{
+		fmt.Printf("UDP Client: %s\n", udpClient)
+		udpClientsList = append(udpClientsList, &UdpClient{
 			host: udpClientConfiguration[0],
 			port: port,
 		})
@@ -57,7 +58,7 @@ func NewUdpForwarder(game enums.Game, adapterConfiguration []string) (*UdpForwar
 }
 
 func (udp *UdpForwarder) ChannelInit(now time.Time, channel chan telemetry.GameData, port int) {
-	fmt.Println("UdpForwarder ChannelInit")
+	log.Println("UdpForwarder ChannelInit")
 	//nolint:gosimple // loop is needed to keep the channel open
 	for {
 		select {
@@ -69,19 +70,23 @@ func (udp *UdpForwarder) ChannelInit(now time.Time, channel chan telemetry.GameD
 
 // Convert converts the data to the UDP clients
 func (udp *UdpForwarder) Convert(_ time.Time, data telemetry.GameData, _ int) {
+	log.Println("UdpForwarder Convert")
 	for _, client := range udp.Clients {
 		if client.connection == nil {
-			udp.connectToClient(&client)
-			defer client.connection.Close()
+			udp.connectToClient(client)
 		}
 		_, err := client.connection.Write(data.RawData)
 		if err != nil {
-			return
+			if client.connection != nil {
+				client.connection.Close()
+			}
+			client.connection = nil
 		}
 	}
 }
 
 func (udp *UdpForwarder) connectToClient(client *UdpClient) {
+	log.Println("UdpForwarder connectToClient")
 	var err error
 	address := client.host + ":" + strconv.Itoa(client.port)
 	client.addr, err = net.ResolveUDPAddr("udp", address)

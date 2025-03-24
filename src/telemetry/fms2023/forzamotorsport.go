@@ -2,11 +2,9 @@ package fms2023
 
 import (
 	"encoding/binary"
-	"fmt"
 	"log"
 	"math"
 	"strconv"
-	"strings"
 	"time"
 
 	"github.com/bluemanos/simracing-telemetry/src/pkg/converter"
@@ -37,7 +35,7 @@ func NewForzaMotorsportHandler(debugMode string) *ForzaMotorsportHandler {
 // InitAndRun starts the ForzaMotorsportHandler
 func (fm *ForzaMotorsportHandler) InitAndRun(port int) error {
 	udpServer := server.NewServer("0.0.0.0:" + strconv.Itoa(port))
-	fm.Telemetries, fm.Keys = fm.InitTelemetry()
+	fm.Telemetries, fm.Keys = telemetry.Telemetries()
 
 	log.Printf("Forza data out server listening on %s:%d, waiting for Forza data...\n", telemetry.GetOutboundIP(), port)
 
@@ -49,53 +47,8 @@ func (fm *ForzaMotorsportHandler) InitAndRun(port int) error {
 	return nil
 }
 
-// InitTelemetry initializes the telemetry data
-func (fm *ForzaMotorsportHandler) InitTelemetry() (map[string]telemetry.TelemetryData, []string) {
-	lines, err := telemetry.ReadLines("fms2023/" + DataFormatFile)
-	if err != nil {
-		log.Fatalf("Error reading format file: %s", err)
-	}
-
-	telemetryArray := make(map[string]telemetry.TelemetryData, len(lines))
-	telemetryKeys := make([]string, len(lines))
-	startOffset := 0
-	endOffset := 0
-	dataLength := 0
-
-	for i, line := range lines {
-		dataFormat := strings.Split(line, " ")
-		dataType := dataFormat[0]
-		dataName := dataFormat[1]
-
-		switch dataType {
-		case "S32", "U32", "F32":
-			dataLength = 4
-		case "U16":
-			dataLength = 2
-		case "U8", "S8":
-			dataLength = 1
-		default:
-			log.Fatalf("ForzaMotorsportHandler Error: Unknown data type: %s\n", dataType)
-		}
-		endOffset = endOffset + dataLength
-		startOffset = endOffset - dataLength
-
-		telemItem := telemetry.TelemetryData{
-			Position:    i,
-			Name:        dataName,
-			DataType:    dataType,
-			StartOffset: startOffset,
-			EndOffset:   endOffset,
-		}
-		telemetryArray[dataName] = telemItem
-		telemetryKeys[i] = dataName
-	}
-
-	return telemetryArray, telemetryKeys
-}
-
 func (fm *ForzaMotorsportHandler) ProcessChannel(channel chan []byte, port int) {
-	fmt.Println("ForzaMotorsportHandler ProcessChannel")
+	log.Println("ForzaMotorsportHandler ProcessChannel")
 	for _, adapter := range fm.Adapters {
 		go adapter.ChannelInit(time.Now(), gameTelemetryData, port)
 	}
@@ -111,6 +64,7 @@ func (fm *ForzaMotorsportHandler) ProcessChannel(channel chan []byte, port int) 
 
 // ProcessBuffer processes the received data
 func (fm *ForzaMotorsportHandler) ProcessBuffer(buffer []byte, port int) {
+	log.Println("ForzaMotorsportHandler ProcessBuffer")
 	tempTelemetry := make(map[string]float32, len(fm.Telemetries))
 
 	for i, telemetryObj := range fm.Telemetries {
