@@ -48,7 +48,6 @@ func (fm *ForzaMotorsportHandler) InitAndRun(port int) error {
 }
 
 func (fm *ForzaMotorsportHandler) ProcessChannel(channel chan []byte, port int) {
-	log.Println("ForzaMotorsportHandler ProcessChannel")
 	for _, adapter := range fm.TelemetryHandler.Adapters {
 		go adapter.ChannelInit(time.Now(), gameTelemetryData, port)
 	}
@@ -64,7 +63,6 @@ func (fm *ForzaMotorsportHandler) ProcessChannel(channel chan []byte, port int) 
 
 // ProcessBuffer processes the received data
 func (fm *ForzaMotorsportHandler) ProcessBuffer(buffer []byte, port int) {
-	log.Println("ForzaMotorsportHandler ProcessBuffer")
 	tempTelemetry := make(map[string]float32, len(fm.TelemetryHandler.Telemetries))
 
 	for i, telemetryObj := range fm.TelemetryHandler.Telemetries {
