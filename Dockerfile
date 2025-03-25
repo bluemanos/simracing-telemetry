@@ -1,5 +1,5 @@
 # Go Version
-FROM golang:1.23
+FROM golang:1.23.7
 
 ENV GO111MODULE=on \
     GOFLAGS=-buildvcs=false

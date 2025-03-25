@@ -1,6 +1,6 @@
 module github.com/bluemanos/simracing-telemetry
 
-go 1.23
+go 1.23.7
 
 require (
 	github.com/Masterminds/squirrel v1.5.4
@@ -11,7 +11,7 @@ require (
 	github.com/pkg/errors v0.9.1
 	github.com/spf13/afero v1.11.0
 	github.com/stretchr/testify v1.10.0
-	golang.org/x/sync v0.9.0
+	golang.org/x/sync v0.12.0
 )
 
 require (
