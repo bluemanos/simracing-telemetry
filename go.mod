@@ -4,7 +4,7 @@ go 1.23.7
 
 require (
 	github.com/Masterminds/squirrel v1.5.4
-	github.com/getsentry/sentry-go v0.31.1
+	github.com/getsentry/sentry-go v0.32.0
 	github.com/go-sql-driver/mysql v1.9.2
 	github.com/jmoiron/sqlx v1.4.0
 	github.com/joho/godotenv v1.5.1
